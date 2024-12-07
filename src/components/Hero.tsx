@@ -1,8 +1,23 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/components/ui/use-toast";
 
 export const Hero = () => {
   const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to sign out",
+        variant: "destructive",
+      });
+    } else {
+      navigate("/auth");
+    }
+  };
 
   return (
     <div className="min-h-[80vh] flex flex-col items-center justify-center text-center px-4 animate-fade-in">
@@ -27,6 +42,13 @@ export const Hero = () => {
           Custom Page
         </Button>
       </div>
+      <Button
+        onClick={handleLogout}
+        variant="outline"
+        className="mt-8"
+      >
+        Sign Out
+      </Button>
     </div>
   );
 };
