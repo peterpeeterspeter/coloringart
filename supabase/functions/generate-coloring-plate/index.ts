@@ -44,12 +44,13 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        version: "435061a1b5a4c1e26740464bf786efdfa9cb3a3ac488595a2de23e143fdb0117",
+        version: "9c45da2876944ac5c928962fd7c1e1c42a0e571e39ea13c29a1d925ef8d25a5b",
         input: {
           prompt: settings.prompt,
-          negative_prompt: "blurry, bad, text, watermark",
-          num_inference_steps: 50,
-          guidance_scale: 7.5,
+          negative_prompt: "blurry, bad, text, watermark, signature",
+          image_resolution: "512",
+          num_inference_steps: 30,
+          guidance_scale: 12.5,
         },
       }),
     })
