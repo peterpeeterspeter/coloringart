@@ -13,13 +13,32 @@ serve(async (req) => {
   }
 
   try {
-    const { settings } = await req.json()
+    const { settings, predictionId } = await req.json()
     
-    // Convert questionnaire answers into a prompt
+    // If predictionId is provided, check the status
+    if (predictionId) {
+      const response = await fetch(`https://api.replicate.com/v1/predictions/${predictionId}`, {
+        headers: {
+          Authorization: `Token ${Deno.env.get('REPLICATE_API_TOKEN')}`,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error(`Status check failed: ${response.status}`)
+      }
+
+      const result = await response.json()
+      console.log("Status check response:", result)
+
+      return new Response(JSON.stringify(result), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    // Otherwise, create a new prediction
     const prompt = generateMandalaPrompt(settings)
     console.log("Generated prompt:", prompt)
 
-    // Call Replicate API instead since it's more reliable
     const response = await fetch("https://api.replicate.com/v1/predictions", {
       method: "POST",
       headers: {

@@ -55,31 +55,35 @@ export const MandalaQuestionnaire = () => {
 
   const generateMandala = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('generate-mandala', {
+      // Initial request to start the generation
+      const { data: initialData, error: initialError } = await supabase.functions.invoke('generate-mandala', {
         body: { settings: answers }
       });
 
-      if (error) throw error;
+      if (initialError) throw initialError;
+      console.log("Initial response:", initialData);
 
-      const checkResult = async (url: string) => {
-        const response = await fetch(url, {
-          headers: {
-            Authorization: `Token ${import.meta.env.VITE_REPLICATE_API_TOKEN}`,
-          },
+      // Poll for the result
+      const checkResult = async (predictionId: string): Promise<string> => {
+        const { data: statusData, error: statusError } = await supabase.functions.invoke('generate-mandala', {
+          body: { predictionId }
         });
-        const result = await response.json();
+
+        if (statusError) throw statusError;
+        console.log("Status check response:", statusData);
         
-        if (result.status === "succeeded") {
-          return result.output[0];
-        } else if (result.status === "failed") {
+        if (statusData.status === "succeeded") {
+          return statusData.output[0];
+        } else if (statusData.status === "failed") {
           throw new Error("Image generation failed");
         }
         
+        // Wait before checking again
         await new Promise(resolve => setTimeout(resolve, 1000));
-        return checkResult(url);
+        return checkResult(predictionId);
       };
 
-      const imageUrl = await checkResult(data.urls.get);
+      const imageUrl = await checkResult(initialData.id);
       setGeneratedImage(imageUrl);
       return imageUrl;
 
