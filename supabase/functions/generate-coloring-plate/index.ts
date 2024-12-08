@@ -44,14 +44,19 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        version: "a99db278e33a96e8fab6c90473078e88b21d35181d860ea49fe0980353e9b850",
+        version: "c221b2b8ef527988fb59bf24a8b97c4561f1c671f73bd389f866bfb27c061316",
         input: {
           prompt: settings.prompt,
-          negative_prompt: "blurry, bad, text, watermark, signature, color",
+          negative_prompt: "blurry, bad, text, watermark, signature, color, photorealistic",
           num_outputs: 1,
+          width: 768,
+          height: 768,
           scheduler: "K_EULER",
           num_inference_steps: 50,
           guidance_scale: 7.5,
+          refine: "expert_ensemble_refiner",
+          high_noise_frac: 0.8,
+          style_preset: "line-art"
         },
       }),
     })
