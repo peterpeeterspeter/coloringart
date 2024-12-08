@@ -14,6 +14,7 @@ serve(async (req) => {
 
   try {
     const { settings, predictionId } = await req.json()
+    console.log("Received request with settings:", settings);
     
     // If predictionId is provided, check the status
     if (predictionId) {
@@ -85,22 +86,26 @@ serve(async (req) => {
 })
 
 function generateMandalaPrompt(settings: any): string {
-  // Extract emotional elements
-  const emotions = Array.isArray(settings.emotions) ? settings.emotions.join(", ") : settings.emotions;
-  const intensity = settings.emotionalIntensity;
-  const quality = settings.emotionalQuality;
+  if (!settings) {
+    throw new Error("Settings object is required");
+  }
+
+  // Extract emotional elements with default values
+  const emotions = Array.isArray(settings.emotions) ? settings.emotions.join(", ") : (settings.emotions || "balanced");
+  const intensity = settings.emotionalIntensity || "5";
+  const quality = settings.emotionalQuality || "Balance";
   
   // Physical and mental aspects
-  const energy = settings.energyLevel;
-  const tension = settings.bodyTension;
-  const thoughtPattern = settings.thoughtPattern;
-  const detailLevel = settings.detailLevel;
+  const energy = settings.energyLevel || "Medium (balanced, regular patterns)";
+  const tension = settings.bodyTension || "Center (influences core design)";
+  const thoughtPattern = settings.thoughtPattern || "Creative (organic, flowing patterns)";
+  const detailLevel = settings.detailLevel || "Moderately detailed (balanced complexity)";
   
   // Spiritual and environmental elements
-  const symbols = Array.isArray(settings.spiritualSymbols) ? settings.spiritualSymbols.join(", ") : settings.spiritualSymbols;
-  const intention = settings.spiritualIntention;
-  const naturalElement = settings.naturalElements;
-  const timeOfDay = settings.timeOfDay;
+  const symbols = Array.isArray(settings.spiritualSymbols) ? settings.spiritualSymbols.join(", ") : (settings.spiritualSymbols || "Geometric shapes");
+  const intention = settings.spiritualIntention || "Inner peace";
+  const naturalElement = settings.naturalElements || "Earth (solid, grounding patterns)";
+  const timeOfDay = settings.timeOfDay || "Noon (bold, clear patterns)";
 
   return `Create a beautiful and intricate mandala design with the following characteristics:
     - Emotional essence: ${emotions} with ${intensity}/10 intensity
