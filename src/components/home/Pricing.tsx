@@ -1,9 +1,34 @@
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { useSession, useSupabaseClient } from "@supabase/auth-helpers-react";
+import { toast } from "sonner";
 
 export const Pricing = () => {
   const navigate = useNavigate();
+  const session = useSession();
+  const supabase = useSupabaseClient();
+
+  const handleSubscribe = async (priceId: string, mode: 'subscription' | 'payment') => {
+    if (!session) {
+      navigate("/auth");
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { priceId, mode }
+      });
+
+      if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (error) {
+      console.error('Error creating checkout session:', error);
+      toast.error('Failed to start checkout process. Please try again.');
+    }
+  };
 
   return (
     <section className="container mx-auto px-4 py-16">
@@ -65,7 +90,7 @@ export const Pricing = () => {
             </li>
           </ul>
           <Button 
-            onClick={() => navigate("/auth")}
+            onClick={() => handleSubscribe('price_premium', 'subscription')}
             className="w-full bg-primary text-white"
           >
             Subscribe Now
@@ -94,7 +119,7 @@ export const Pricing = () => {
             </li>
           </ul>
           <Button 
-            onClick={() => navigate("/auth")}
+            onClick={() => handleSubscribe('price_credits', 'payment')}
             variant="outline"
             className="w-full"
           >
