@@ -49,6 +49,7 @@ export const MandalaQuestionnaire = () => {
   } = useQuestionnaireState();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [isSuccess, setIsSuccess] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const session = useSession();
@@ -133,11 +134,17 @@ export const MandalaQuestionnaire = () => {
 
       if (error) throw error;
 
+      setIsSuccess(true);
       toast({
         title: "Success!",
-        description: "Your mandala has been created",
+        description: "Your mandala has been created. You'll be redirected in 5 seconds.",
       });
-      navigate("/");
+      
+      // Delay navigation to allow user to see the result
+      setTimeout(() => {
+        navigate("/");
+      }, 5000);
+      
     } catch (error) {
       console.error("Error creating mandala:", error);
       toast({
@@ -153,31 +160,40 @@ export const MandalaQuestionnaire = () => {
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-4xl p-6 space-y-8 animate-fade-in">
-        <div className="space-y-12">
-          {questionGroups.map((group, index) => (
-            <div key={index} className="space-y-6">
-              <h3 className="text-3xl font-bold text-center text-primary">
-                {group.title}
-              </h3>
-              <QuestionGroup
-                questions={group.questions}
-                answers={answers}
-                onAnswer={handleAnswer}
-              />
+        {!isSuccess ? (
+          <>
+            <div className="space-y-12">
+              {questionGroups.map((group, index) => (
+                <div key={index} className="space-y-6">
+                  <h3 className="text-3xl font-bold text-center text-primary">
+                    {group.title}
+                  </h3>
+                  <QuestionGroup
+                    questions={group.questions}
+                    answers={answers}
+                    onAnswer={handleAnswer}
+                  />
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
 
-        <FinalStep
-          name={name}
-          description={description}
-          answers={answers}
-          onNameChange={setName}
-          onDescriptionChange={setDescription}
-        />
+            <FinalStep
+              name={name}
+              description={description}
+              answers={answers}
+              onNameChange={setName}
+              onDescriptionChange={setDescription}
+            />
+          </>
+        ) : (
+          <div className="text-center space-y-4">
+            <h2 className="text-2xl font-bold text-primary">Your Mandala is Ready!</h2>
+            <p className="text-gray-600">You'll be redirected to the home page in a few seconds...</p>
+          </div>
+        )}
 
         <MandalaPreview imageUrl={generatedImage} />
-        <SubmitButton isSubmitting={isSubmitting} onClick={handleSubmit} />
+        {!isSuccess && <SubmitButton isSubmitting={isSubmitting} onClick={handleSubmit} />}
       </Card>
     </div>
   );
