@@ -7,6 +7,9 @@ import { useQuestionnaireState } from "@/hooks/useQuestionnaireState";
 import { MandalaForm } from "./mandala/MandalaForm";
 import { MandalaSuccess } from "./mandala/MandalaSuccess";
 import { SubmitButton } from "./mandala/SubmitButton";
+import { Button } from "./ui/button";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 
 export const MandalaQuestionnaire = () => {
   const {
@@ -23,6 +26,7 @@ export const MandalaQuestionnaire = () => {
   const [isSuccess, setIsSuccess] = useState(false);
   const { toast } = useToast();
   const session = useSession();
+  const navigate = useNavigate();
 
   const generateMandala = async () => {
     try {
@@ -149,28 +153,38 @@ export const MandalaQuestionnaire = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <Card className="w-full max-w-4xl p-6 space-y-8 animate-fade-in">
-        {!isSuccess ? (
-          <>
-            <MandalaForm
+    <div className="min-h-screen flex flex-col p-4">
+      <Button
+        variant="ghost"
+        className="w-fit mb-4"
+        onClick={() => navigate("/")}
+      >
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Back to Home
+      </Button>
+      <div className="flex items-center justify-center flex-1">
+        <Card className="w-full max-w-4xl p-6 space-y-8 animate-fade-in">
+          {!isSuccess ? (
+            <>
+              <MandalaForm
+                answers={answers}
+                name={name}
+                description={description}
+                onAnswer={handleAnswer}
+                onNameChange={setName}
+                onDescriptionChange={setDescription}
+              />
+              <SubmitButton isSubmitting={isSubmitting} onClick={handleSubmit} />
+            </>
+          ) : (
+            <MandalaSuccess
+              imageUrl={generatedImage}
               answers={answers}
-              name={name}
-              description={description}
-              onAnswer={handleAnswer}
-              onNameChange={setName}
-              onDescriptionChange={setDescription}
+              onDownload={handleDownload}
             />
-            <SubmitButton isSubmitting={isSubmitting} onClick={handleSubmit} />
-          </>
-        ) : (
-          <MandalaSuccess
-            imageUrl={generatedImage}
-            answers={answers}
-            onDownload={handleDownload}
-          />
-        )}
-      </Card>
+          )}
+        </Card>
+      </div>
     </div>
   );
 };
