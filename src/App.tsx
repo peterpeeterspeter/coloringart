@@ -7,6 +7,7 @@ import { SessionContextProvider } from "@supabase/auth-helpers-react";
 import { supabase } from "@/integrations/supabase/client";
 import Index from "./pages/Index";
 import CreateMandala from "./pages/CreateMandala";
+import CreateColoringPlate from "./pages/CreateColoringPlate";
 import AuthPage from "./pages/Auth";
 import { useEffect, useState } from "react";
 
@@ -57,6 +58,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <CreateMandala />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/create-coloring-plate"
+              element={
+                <ProtectedRoute>
+                  <CreateColoringPlate />
                 </ProtectedRoute>
               }
             />
