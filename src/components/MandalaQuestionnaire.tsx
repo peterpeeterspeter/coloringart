@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
@@ -6,9 +7,11 @@ import { useToast } from "@/hooks/use-toast";
 import { useSession } from "@supabase/auth-helpers-react";
 import { questions } from "./mandala/questions";
 import { FinalStep } from "./mandala/FinalStep";
-import { Loader2 } from "lucide-react";
 import { QuestionGroup } from "./mandala/QuestionGroup";
 import { useQuestionnaireState } from "@/hooks/useQuestionnaireState";
+import { MandalaPreview } from "./mandala/MandalaPreview";
+import { SubmitButton } from "./mandala/SubmitButton";
+import type { MandalaAnswers } from "@/types/mandala";
 
 // Group questions by category
 const questionGroups = [
@@ -169,32 +172,8 @@ export const MandalaQuestionnaire = () => {
           onDescriptionChange={setDescription}
         />
 
-        {generatedImage && (
-          <div className="mt-4">
-            <img
-              src={generatedImage}
-              alt="Generated Mandala"
-              className="w-full rounded-lg shadow-lg"
-            />
-          </div>
-        )}
-
-        <div className="flex justify-end">
-          <Button
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            className="bg-primary hover:bg-primary/90 text-white"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Creating...
-              </>
-            ) : (
-              "Create Mandala"
-            )}
-          </Button>
-        </div>
+        <MandalaPreview imageUrl={generatedImage} />
+        <SubmitButton isSubmitting={isSubmitting} onClick={handleSubmit} />
       </Card>
     </div>
   );

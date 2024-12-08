@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { questions } from "@/components/mandala/questions";
+import type { MandalaAnswers } from "@/types/mandala";
 
 export const useQuestionnaireState = () => {
-  const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
+  const [answers, setAnswers] = useState<MandalaAnswers>({});
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
 
