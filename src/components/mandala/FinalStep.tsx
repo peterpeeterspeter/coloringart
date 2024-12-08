@@ -1,54 +1,48 @@
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import type { MandalaAnswers } from "@/types/mandala";
 
 interface FinalStepProps {
   name: string;
   description: string;
-  answers: Record<string, string>;
-  onNameChange: (value: string) => void;
-  onDescriptionChange: (value: string) => void;
+  answers: MandalaAnswers;
+  onNameChange: (name: string) => void;
+  onDescriptionChange: (description: string) => void;
 }
 
 export const FinalStep = ({
   name,
   description,
-  answers,
   onNameChange,
   onDescriptionChange,
 }: FinalStepProps) => {
   return (
-    <>
-      <div className="space-y-4">
-        <div>
-          <Label htmlFor="name">Name your mandala</Label>
-          <Input
-            id="name"
-            value={name}
-            onChange={(e) => onNameChange(e.target.value)}
-            placeholder="Enter a name"
-            className="mt-1"
-          />
-        </div>
-        <div>
-          <Label htmlFor="description">Description (optional)</Label>
-          <Textarea
-            id="description"
-            value={description}
-            onChange={(e) => onDescriptionChange(e.target.value)}
-            placeholder="Describe your mandala"
-            className="mt-1"
-          />
-        </div>
+    <div className="space-y-4">
+      <h3 className="text-3xl font-bold text-center text-primary">Final Details</h3>
+      <div className="space-y-2">
+        <label htmlFor="name" className="text-sm font-medium">
+          Name your mandala *
+        </label>
+        <Input
+          id="name"
+          value={name}
+          onChange={(e) => onNameChange(e.target.value)}
+          placeholder="Enter a name for your mandala"
+          required
+        />
       </div>
-      <div className="border-t pt-4">
-        <h3 className="font-medium mb-2">Your choices:</h3>
-        {Object.entries(answers).map(([key, value]) => (
-          <div key={key} className="text-sm text-gray-600">
-            <span className="capitalize">{key}</span>: {value}
-          </div>
-        ))}
+      <div className="space-y-2">
+        <label htmlFor="description" className="text-sm font-medium">
+          Description (Optional)
+        </label>
+        <Textarea
+          id="description"
+          value={description}
+          onChange={(e) => onDescriptionChange(e.target.value)}
+          placeholder="Add a description for your mandala"
+          className="min-h-[100px]"
+        />
       </div>
-    </>
+    </div>
   );
 };
