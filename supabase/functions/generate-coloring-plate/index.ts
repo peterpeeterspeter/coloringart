@@ -14,7 +14,7 @@ serve(async (req) => {
 
   try {
     const { settings, predictionId } = await req.json()
-    console.log("Received request with settings:", settings);
+    console.log("Received request:", { settings, predictionId })
     
     // If predictionId is provided, check the status
     if (predictionId) {
@@ -36,7 +36,7 @@ serve(async (req) => {
       })
     }
 
-    // Otherwise, create a new prediction
+    // Create a new prediction
     const response = await fetch("https://api.replicate.com/v1/predictions", {
       method: "POST",
       headers: {
@@ -44,20 +44,21 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        version: "9c45da2876944ac5c928962fd7c1e1c42a0e571e39ea13c29a1d925ef8d25a5b",
+        version: "a99db278e33a96e8fab6c90473078e88b21d35181d860ea49fe0980353e9b850",
         input: {
           prompt: settings.prompt,
-          negative_prompt: "blurry, bad, text, watermark, signature",
-          image_resolution: "512",
-          num_inference_steps: 30,
-          guidance_scale: 12.5,
+          negative_prompt: "blurry, bad, text, watermark, signature, color",
+          num_outputs: 1,
+          scheduler: "K_EULER",
+          num_inference_steps: 50,
+          guidance_scale: 7.5,
         },
       }),
     })
 
     if (!response.ok) {
       const error = await response.text()
-      console.error("API Error:", error)
+      console.error("Replicate API Error:", error)
       throw new Error(`API returned ${response.status}: ${error}`)
     }
 
@@ -68,7 +69,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (error) {
-    console.error("Error:", error)
+    console.error("Error in generate-coloring-plate function:", error)
     return new Response(
       JSON.stringify({ error: 'An unexpected error occurred', details: error.message }),
       { 
