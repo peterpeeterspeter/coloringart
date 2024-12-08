@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
@@ -6,27 +5,50 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useSession } from "@supabase/auth-helpers-react";
 import { questions } from "./mandala/questions";
-import { QuestionStep } from "./mandala/QuestionStep";
 import { FinalStep } from "./mandala/FinalStep";
 import { Loader2 } from "lucide-react";
+import { QuestionGroup } from "./mandala/QuestionGroup";
+import { useQuestionnaireState } from "@/hooks/useQuestionnaireState";
+
+// Group questions by category
+const questionGroups = [
+  {
+    title: "Emotional Center",
+    questions: questions.slice(0, 3),
+  },
+  {
+    title: "Physical Well-being",
+    questions: questions.slice(3, 5),
+  },
+  {
+    title: "Mental State",
+    questions: questions.slice(5, 7),
+  },
+  {
+    title: "Spiritual Connection",
+    questions: questions.slice(7, 9),
+  },
+  {
+    title: "Environmental Influence",
+    questions: questions.slice(9),
+  },
+];
 
 export const MandalaQuestionnaire = () => {
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
+  const {
+    answers,
+    name,
+    description,
+    setName,
+    setDescription,
+    handleAnswer,
+    isValid,
+  } = useQuestionnaireState();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   const session = useSession();
-
-  const handleAnswer = (value: string | string[]) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [questions[currentQuestion].id]: value,
-    }));
-  };
 
   const generateMandala = async () => {
     try {
@@ -36,7 +58,6 @@ export const MandalaQuestionnaire = () => {
 
       if (error) throw error;
 
-      // Poll for the result
       const checkResult = async (url: string) => {
         const response = await fetch(url, {
           headers: {
@@ -51,7 +72,6 @@ export const MandalaQuestionnaire = () => {
           throw new Error("Image generation failed");
         }
         
-        // Wait and check again
         await new Promise(resolve => setTimeout(resolve, 1000));
         return checkResult(url);
       };
@@ -71,120 +91,98 @@ export const MandalaQuestionnaire = () => {
     }
   };
 
-  const isAnswerValid = () => {
-    const currentQ = questions[currentQuestion];
-    const answer = answers[currentQ.id];
-
-    if (!answer) return false;
-
-    if (currentQ.type === "multiple") {
-      return Array.isArray(answer) && answer.length > 0 && answer.length <= (currentQ.maxSelections || 1);
+  const handleSubmit = async () => {
+    if (!session?.user?.id) {
+      toast({
+        title: "Authentication Error",
+        description: "You must be logged in to create a mandala",
+        variant: "destructive",
+      });
+      return;
     }
 
-    return true;
-  };
+    if (!isValid()) {
+      toast({
+        title: "Name Required",
+        description: "Please provide a name for your mandala",
+        variant: "destructive",
+      });
+      return;
+    }
 
-  const handleNext = async () => {
-    if (currentQuestion < questions.length - 1) {
-      setCurrentQuestion((prev) => prev + 1);
-    } else {
-      if (!name.trim()) {
-        toast({
-          title: "Name Required",
-          description: "Please provide a name for your mandala",
-          variant: "destructive",
-        });
-        return;
-      }
+    setIsSubmitting(true);
+    try {
+      const imageUrl = await generateMandala();
+      
+      const { error } = await supabase.from("mandalas").insert({
+        name,
+        description,
+        settings: {
+          ...answers,
+          imageUrl
+        },
+        user_id: session.user.id,
+      });
 
-      if (!session?.user?.id) {
-        toast({
-          title: "Authentication Error",
-          description: "You must be logged in to create a mandala",
-          variant: "destructive",
-        });
-        return;
-      }
+      if (error) throw error;
 
-      setIsSubmitting(true);
-      try {
-        const imageUrl = await generateMandala();
-        
-        const { error } = await supabase.from("mandalas").insert({
-          name,
-          description,
-          settings: {
-            ...answers,
-            imageUrl
-          },
-          user_id: session.user.id,
-        });
-
-        if (error) throw error;
-
-        toast({
-          title: "Success!",
-          description: "Your mandala has been created",
-        });
-        navigate("/");
-      } catch (error) {
-        console.error("Error creating mandala:", error);
-        toast({
-          title: "Error",
-          description: "Failed to create mandala. Please try again.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsSubmitting(false);
-      }
+      toast({
+        title: "Success!",
+        description: "Your mandala has been created",
+      });
+      navigate("/");
+    } catch (error) {
+      console.error("Error creating mandala:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create mandala. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
-
-  const currentQ = questions[currentQuestion];
-  const isLastQuestion = currentQuestion === questions.length - 1;
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      <Card className="w-full max-w-lg p-6 space-y-6 animate-fade-in">
-        {isLastQuestion ? (
-          <>
-            <FinalStep
-              name={name}
-              description={description}
-              answers={answers}
-              onNameChange={setName}
-              onDescriptionChange={setDescription}
+      <Card className="w-full max-w-4xl p-6 space-y-8 animate-fade-in">
+        <div className="space-y-12">
+          {questionGroups.map((group, index) => (
+            <div key={index} className="space-y-6">
+              <h3 className="text-3xl font-bold text-center text-primary">
+                {group.title}
+              </h3>
+              <QuestionGroup
+                questions={group.questions}
+                answers={answers}
+                onAnswer={handleAnswer}
+              />
+            </div>
+          ))}
+        </div>
+
+        <FinalStep
+          name={name}
+          description={description}
+          answers={answers}
+          onNameChange={setName}
+          onDescriptionChange={setDescription}
+        />
+
+        {generatedImage && (
+          <div className="mt-4">
+            <img
+              src={generatedImage}
+              alt="Generated Mandala"
+              className="w-full rounded-lg shadow-lg"
             />
-            {generatedImage && (
-              <div className="mt-4">
-                <img
-                  src={generatedImage}
-                  alt="Generated Mandala"
-                  className="w-full rounded-lg shadow-lg"
-                />
-              </div>
-            )}
-          </>
-        ) : (
-          <QuestionStep
-            question={currentQ}
-            value={answers[currentQ.id] || (currentQ.type === "multiple" ? [] : "")}
-            onAnswer={handleAnswer}
-          />
+          </div>
         )}
-        <div className="mt-8 flex justify-between">
-          {currentQuestion > 0 && (
-            <Button
-              onClick={() => setCurrentQuestion((prev) => prev - 1)}
-              variant="outline"
-            >
-              Previous
-            </Button>
-          )}
-          <div className="flex-1" />
+
+        <div className="flex justify-end">
           <Button
-            onClick={handleNext}
-            disabled={!isAnswerValid() || isSubmitting}
+            onClick={handleSubmit}
+            disabled={isSubmitting}
             className="bg-primary hover:bg-primary/90 text-white"
           >
             {isSubmitting ? (
@@ -192,10 +190,8 @@ export const MandalaQuestionnaire = () => {
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Creating...
               </>
-            ) : isLastQuestion ? (
-              "Create Mandala"
             ) : (
-              "Next"
+              "Create Mandala"
             )}
           </Button>
         </div>

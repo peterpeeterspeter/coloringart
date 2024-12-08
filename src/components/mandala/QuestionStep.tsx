@@ -8,9 +8,10 @@ interface QuestionStepProps {
   question: Question;
   value: string | string[];
   onAnswer: (value: string | string[]) => void;
+  optional?: boolean;
 }
 
-export const QuestionStep = ({ question, value, onAnswer }: QuestionStepProps) => {
+export const QuestionStep = ({ question, value, onAnswer, optional = false }: QuestionStepProps) => {
   const handleMultipleSelection = (option: string) => {
     const currentValue = Array.isArray(value) ? value : [];
     const maxSelections = question.maxSelections || 1;
@@ -22,10 +23,12 @@ export const QuestionStep = ({ question, value, onAnswer }: QuestionStepProps) =
     }
   };
 
+  const questionText = `${question.question}${optional ? ' (Optional)' : ''}`;
+
   if (question.type === "range") {
     return (
       <>
-        <h2 className="text-2xl font-bold mb-6 text-center">{question.question}</h2>
+        <h2 className="text-2xl font-bold mb-6 text-center">{questionText}</h2>
         <div className="w-full px-4">
           <Slider
             defaultValue={[value ? parseInt(value as string) : 5]}
@@ -47,7 +50,7 @@ export const QuestionStep = ({ question, value, onAnswer }: QuestionStepProps) =
   if (question.type === "multiple") {
     return (
       <>
-        <h2 className="text-2xl font-bold mb-6 text-center">{question.question}</h2>
+        <h2 className="text-2xl font-bold mb-6 text-center">{questionText}</h2>
         <p className="text-sm text-gray-500 mb-4 text-center">
           Choose up to {question.maxSelections} options
         </p>
@@ -69,7 +72,7 @@ export const QuestionStep = ({ question, value, onAnswer }: QuestionStepProps) =
 
   return (
     <>
-      <h2 className="text-2xl font-bold mb-6 text-center">{question.question}</h2>
+      <h2 className="text-2xl font-bold mb-6 text-center">{questionText}</h2>
       <RadioGroup
         onValueChange={(val) => onAnswer(val)}
         value={value as string}
