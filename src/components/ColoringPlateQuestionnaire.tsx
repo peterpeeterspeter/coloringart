@@ -1,17 +1,16 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useSession } from "@supabase/auth-helpers-react";
-import { Download } from "lucide-react";
+import { ColoringPlateForm } from "./coloring-plate/ColoringPlateForm";
+import { ColoringPlateSuccess } from "./coloring-plate/ColoringPlateSuccess";
 
 export const ColoringPlateQuestionnaire = () => {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [prompt, setPrompt] = useState("");
+  const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -20,8 +19,10 @@ export const ColoringPlateQuestionnaire = () => {
 
   const generateColoringPlate = async () => {
     try {
+      const enhancedPrompt = generateEnhancedPrompt(prompt, answers);
+      
       const { data: initialData, error: initialError } = await supabase.functions.invoke('generate-coloring-plate', {
-        body: { settings: { prompt } }
+        body: { settings: { prompt: enhancedPrompt } }
       });
 
       if (initialError) throw initialError;
@@ -89,6 +90,29 @@ export const ColoringPlateQuestionnaire = () => {
     }
   };
 
+  const generateEnhancedPrompt = (basePrompt: string, answers: Record<string, string | string[]>) => {
+    const enhancementParts = [];
+    
+    if (answers.complexity) {
+      enhancementParts.push(`with ${answers.complexity} complexity`);
+    }
+    if (answers.lineStyle) {
+      enhancementParts.push(`using ${answers.lineStyle} lines`);
+    }
+    if (answers.background) {
+      enhancementParts.push(`with ${answers.background}`);
+    }
+    if (answers.atmosphere) {
+      enhancementParts.push(`in a ${answers.atmosphere} atmosphere`);
+    }
+
+    const enhancement = enhancementParts.length > 0 
+      ? `. Style: ${enhancementParts.join(', ')}`
+      : '';
+
+    return `Create a coloring page of: ${basePrompt}${enhancement}. Make it suitable for coloring with clear, well-defined lines.`;
+  };
+
   const handleSubmit = async () => {
     if (!session?.user?.id) {
       toast({
@@ -116,7 +140,7 @@ export const ColoringPlateQuestionnaire = () => {
         name,
         description,
         prompt,
-        settings: { prompt },
+        settings: { ...answers, prompt },
         image_url: imageUrl,
         user_id: session.user.id,
       });
@@ -141,89 +165,34 @@ export const ColoringPlateQuestionnaire = () => {
     }
   };
 
+  const handleAnswer = (questionId: string, value: string | string[]) => {
+    setAnswers(prev => ({
+      ...prev,
+      [questionId]: value
+    }));
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-4xl p-6 space-y-8 animate-fade-in">
         {!isSuccess ? (
-          <div className="space-y-6">
-            <h2 className="text-3xl font-bold text-center text-primary">Create Your Coloring Plate</h2>
-            
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium mb-1">
-                  Name *
-                </label>
-                <Input
-                  id="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Enter a name for your coloring plate"
-                  required
-                />
-              </div>
-
-              <div>
-                <label htmlFor="description" className="block text-sm font-medium mb-1">
-                  Description (Optional)
-                </label>
-                <Textarea
-                  id="description"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Add a description for your coloring plate"
-                  className="min-h-[100px]"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="prompt" className="block text-sm font-medium mb-1">
-                  Prompt *
-                </label>
-                <Textarea
-                  id="prompt"
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="Describe what you want in your coloring plate..."
-                  className="min-h-[100px]"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-center">
-              <Button
-                onClick={handleSubmit}
-                disabled={isSubmitting}
-                className="min-w-[200px]"
-              >
-                {isSubmitting ? "Generating..." : "Generate Coloring Plate"}
-              </Button>
-            </div>
-          </div>
+          <ColoringPlateForm
+            name={name}
+            description={description}
+            prompt={prompt}
+            answers={answers}
+            onNameChange={setName}
+            onDescriptionChange={setDescription}
+            onPromptChange={setPrompt}
+            onAnswer={handleAnswer}
+            onSubmit={handleSubmit}
+            isSubmitting={isSubmitting}
+          />
         ) : (
-          <div className="space-y-8">
-            <div className="text-center space-y-4">
-              <h2 className="text-2xl font-bold text-primary">Your Coloring Plate is Ready!</h2>
-              <Button
-                onClick={handleDownload}
-                className="mt-4"
-                disabled={!generatedImage}
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Download Coloring Plate
-              </Button>
-            </div>
-            
-            {generatedImage && (
-              <div className="flex justify-center">
-                <img
-                  src={generatedImage}
-                  alt="Generated coloring plate"
-                  className="max-w-full h-auto rounded-lg shadow-lg"
-                />
-              </div>
-            )}
-          </div>
+          <ColoringPlateSuccess
+            imageUrl={generatedImage}
+            onDownload={handleDownload}
+          />
         )}
       </Card>
     </div>
