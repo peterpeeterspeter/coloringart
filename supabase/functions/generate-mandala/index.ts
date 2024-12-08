@@ -52,7 +52,7 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error:", error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: 'An unexpected error occurred', details: error.message }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -62,26 +62,34 @@ serve(async (req) => {
 })
 
 function generateMandalaPrompt(settings: any): string {
-  const moodPrompts = {
-    Calm: "serene and peaceful mandala with soft flowing patterns",
-    Energetic: "vibrant and dynamic mandala with spiraling energy patterns",
-    Focused: "precise geometric mandala with clear, structured patterns",
-    Relaxed: "gentle, organic mandala with natural flowing elements"
-  }
+  // Extract emotional elements
+  const emotions = Array.isArray(settings.emotions) ? settings.emotions.join(", ") : settings.emotions;
+  const intensity = settings.emotionalIntensity;
+  const quality = settings.emotionalQuality;
+  
+  // Physical and mental aspects
+  const energy = settings.energyLevel;
+  const tension = settings.bodyTension;
+  const thoughtPattern = settings.thoughtPattern;
+  const detailLevel = settings.detailLevel;
+  
+  // Spiritual and environmental elements
+  const symbols = Array.isArray(settings.spiritualSymbols) ? settings.spiritualSymbols.join(", ") : settings.spiritualSymbols;
+  const intention = settings.spiritualIntention;
+  const naturalElement = settings.naturalElements;
+  const timeOfDay = settings.timeOfDay;
 
-  const complexityPrompts = {
-    Simple: "minimal and elegant",
-    Moderate: "balanced level of detail",
-    Complex: "intricate and detailed",
-    "Very Intricate": "highly detailed and elaborate"
-  }
-
-  const stylePrompts = {
-    Geometric: "sacred geometry",
-    Floral: "botanical and floral elements",
-    Abstract: "abstract patterns",
-    Traditional: "traditional tibetan"
-  }
-
-  return `A beautiful ${complexityPrompts[settings.complexity]} mandala in ${stylePrompts[settings.style]} style, ${moodPrompts[settings.mood]}. Spiritual and mystical artwork, centered composition, perfect symmetry, intricate details, meditation art, spiritual symbolism, sacred art.`
+  return `A beautiful and personalized mandala with the following characteristics:
+    - Emotional essence: ${emotions} with ${intensity}/10 intensity
+    - Emotional quality: ${quality}
+    - Energy level: ${energy}
+    - Body focus: ${tension}
+    - Mental state: ${thoughtPattern}
+    - Detail level: ${detailLevel}
+    - Spiritual symbols: ${symbols}
+    - Intention: ${intention}
+    - Natural element: ${naturalElement}
+    - Time influence: ${timeOfDay}
+    
+    Create a centered, symmetrical mandala with perfect balance, incorporating these elements into a harmonious spiritual artwork. Use sacred geometry and mystical symbolism to enhance the spiritual significance.`.replace(/\n\s+/g, ' ');
 }

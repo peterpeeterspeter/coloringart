@@ -12,7 +12,7 @@ import { Loader2 } from "lucide-react";
 
 export const MandalaQuestionnaire = () => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -21,7 +21,7 @@ export const MandalaQuestionnaire = () => {
   const { toast } = useToast();
   const session = useSession();
 
-  const handleAnswer = (value: string) => {
+  const handleAnswer = (value: string | string[]) => {
     setAnswers((prev) => ({
       ...prev,
       [questions[currentQuestion].id]: value,
@@ -69,6 +69,19 @@ export const MandalaQuestionnaire = () => {
       });
       throw error;
     }
+  };
+
+  const isAnswerValid = () => {
+    const currentQ = questions[currentQuestion];
+    const answer = answers[currentQ.id];
+
+    if (!answer) return false;
+
+    if (currentQ.type === "multiple") {
+      return Array.isArray(answer) && answer.length > 0 && answer.length <= (currentQ.maxSelections || 1);
+    }
+
+    return true;
   };
 
   const handleNext = async () => {
@@ -155,14 +168,23 @@ export const MandalaQuestionnaire = () => {
         ) : (
           <QuestionStep
             question={currentQ}
-            value={answers[currentQ.id]}
+            value={answers[currentQ.id] || (currentQ.type === "multiple" ? [] : "")}
             onAnswer={handleAnswer}
           />
         )}
-        <div className="mt-8 flex justify-end">
+        <div className="mt-8 flex justify-between">
+          {currentQuestion > 0 && (
+            <Button
+              onClick={() => setCurrentQuestion((prev) => prev - 1)}
+              variant="outline"
+            >
+              Previous
+            </Button>
+          )}
+          <div className="flex-1" />
           <Button
             onClick={handleNext}
-            disabled={!answers[currentQ.id] || isSubmitting}
+            disabled={!isAnswerValid() || isSubmitting}
             className="bg-primary hover:bg-primary/90 text-white"
           >
             {isSubmitting ? (
