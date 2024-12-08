@@ -44,10 +44,10 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        version: "2a115db935d2e5c8a3d0c5d5a6a45a0a5a5d5e5c8a3d0c5d5a6a45a0a5a5d",
+        version: "435061a1b5a4c1e26740464bf786efdfa9cb3a3ac488595a2de23e143fdb0117",
         input: {
           prompt: settings.prompt,
-          negative_prompt: "blurry, bad, text",
+          negative_prompt: "blurry, bad, text, watermark",
           num_inference_steps: 50,
           guidance_scale: 7.5,
         },
