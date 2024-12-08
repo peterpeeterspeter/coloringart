@@ -1,26 +1,36 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Image } from "lucide-react";
+import { Image, Home } from "lucide-react";
 
 const Index = () => {
   const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-[#FFF8F0]">
-      {/* Header */}
       <header className="container mx-auto px-4 py-6">
         <nav className="flex justify-between items-center">
           <div className="flex items-center space-x-2">
             <img 
               src="/lovable-uploads/05478edb-875e-4a7a-8662-3f2fad9e4121.png" 
               alt="Coloring.art Logo" 
-              className="h-12"
+              className="h-16 md:h-20"
             />
           </div>
-          <div className="flex space-x-6 text-gray-600">
-            <a href="/" className="hover:text-primary">Free Coloring Pages</a>
-            <a href="/create-coloring-plate" className="hover:text-primary">Text To Coloring Page</a>
-            <a href="/gallery" className="hover:text-primary">Gallery</a>
+          <div className="flex items-center space-x-6">
+            <div className="hidden md:flex space-x-6 text-gray-600 font-medium">
+              <a href="/" className="hover:text-primary transition-colors">Free Coloring Pages</a>
+              <a href="/create-coloring-plate" className="hover:text-primary transition-colors">Text To Coloring Page</a>
+              <a href="/create-mandala" className="hover:text-primary transition-colors">Create Mandala</a>
+              <a href="/gallery" className="hover:text-primary transition-colors">Gallery</a>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/")}
+              className="ml-4"
+            >
+              <Home className="h-5 w-5" />
+            </Button>
           </div>
         </nav>
       </header>
@@ -29,19 +39,27 @@ const Index = () => {
       <section className="container mx-auto px-4 py-16">
         <div className="flex flex-col md:flex-row items-center justify-between">
           <div className="md:w-1/2 space-y-6">
-            <h1 className="text-4xl md:text-6xl font-bold">
+            <h1 className="text-4xl md:text-6xl font-bold font-serif">
               AI Coloring Pages Generator
             </h1>
             <p className="text-lg text-gray-600 max-w-lg">
-              Upload photos or enter text to create any coloring page you want for your child! Let our AI Coloring Pages Generator do the magic.
+              Create custom coloring pages and mandalas with our AI-powered tools. Perfect for relaxation and creativity!
             </p>
-            <Button 
-              onClick={() => navigate("/create-coloring-plate")}
-              className="bg-primary hover:bg-primary/90 text-white px-8 py-6 text-lg"
-            >
-              Start Free Now
-            </Button>
-            <p className="text-sm text-gray-500">No credit card required High-quality</p>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Button 
+                onClick={() => navigate("/create-coloring-plate")}
+                className="bg-primary hover:bg-primary/90 text-white px-8 py-6 text-lg"
+              >
+                Create Coloring Page
+              </Button>
+              <Button 
+                onClick={() => navigate("/create-mandala")}
+                className="bg-secondary hover:bg-secondary/90 text-white px-8 py-6 text-lg"
+              >
+                Create Mandala
+              </Button>
+            </div>
+            <p className="text-sm text-gray-500">No credit card required • High-quality output</p>
           </div>
           <div className="md:w-1/2 mt-8 md:mt-0">
             <img 
