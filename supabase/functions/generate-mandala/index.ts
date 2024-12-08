@@ -19,31 +19,36 @@ serve(async (req) => {
     const prompt = generateMandalaPrompt(settings)
     console.log("Generated prompt:", prompt)
 
-    // Call SDXL Mandala API
-    const response = await fetch("https://api.codingdudecom.workers.dev/sdxl-mandala", {
+    // Call Replicate API instead since it's more reliable
+    const response = await fetch("https://api.replicate.com/v1/predictions", {
       method: "POST",
       headers: {
+        Authorization: `Token ${Deno.env.get('REPLICATE_API_TOKEN')}`,
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${Deno.env.get('SDXL_API_KEY')}`,
       },
       body: JSON.stringify({
-        prompt: prompt,
-        negative_prompt: "ugly, blurry, low quality, distorted, disfigured",
-        num_inference_steps: 30,
-        guidance_scale: 7.5,
-        width: 1024,
-        height: 1024,
+        version: "39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
+        input: {
+          prompt: prompt,
+          negative_prompt: "ugly, blurry, low quality, distorted, disfigured",
+          width: 1024,
+          height: 1024,
+          num_outputs: 1,
+          scheduler: "K_EULER",
+          num_inference_steps: 50,
+          guidance_scale: 7.5,
+        },
       }),
-    });
+    })
 
     if (!response.ok) {
-      const error = await response.text();
-      console.error("API Error:", error);
-      throw new Error(`API returned ${response.status}: ${error}`);
+      const error = await response.text()
+      console.error("API Error:", error)
+      throw new Error(`API returned ${response.status}: ${error}`)
     }
 
-    const prediction = await response.json();
-    console.log("API response:", prediction);
+    const prediction = await response.json()
+    console.log("Replicate response:", prediction)
 
     return new Response(JSON.stringify(prediction), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -81,10 +86,10 @@ function generateMandalaPrompt(settings: any): string {
   return `Create a beautiful and intricate mandala design with the following characteristics:
     - Emotional essence: ${emotions} with ${intensity}/10 intensity
     - Emotional quality: ${quality}
-    - Energy level: ${energy}/10
+    - Energy level: ${energy}
     - Physical tension: ${tension}
     - Mental state: ${thoughtPattern}
-    - Detail complexity: ${detailLevel}/10
+    - Detail complexity: ${detailLevel}
     - Spiritual symbols: ${symbols}
     - Spiritual intention: ${intention}
     - Natural elements: ${naturalElement}
