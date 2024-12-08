@@ -1,7 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Image, Home, Search, Filter, FlowerIcon, Type, PaintBucket } from "lucide-react";
+import { Search, Filter, PaintBucket } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Hero } from "@/components/home/Hero";
+import { Features } from "@/components/home/Features";
+import { Pricing } from "@/components/home/Pricing";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -19,107 +22,24 @@ const Index = () => {
           </div>
           <div className="flex items-center space-x-6">
             <div className="hidden md:flex space-x-6 text-gray-600 font-medium">
-              <a href="/" className="hover:text-primary transition-colors">Free Coloring Pages</a>
-              <a href="/create-coloring-plate" className="hover:text-primary transition-colors">Text To Coloring Page</a>
-              <a href="/create-mandala" className="hover:text-primary transition-colors">Create Mandala</a>
+              <a href="/create-coloring-plate" className="hover:text-primary transition-colors">IdeaArtist</a>
+              <a href="/create-mandala" className="hover:text-primary transition-colors">SoulScape</a>
               <a href="/gallery" className="hover:text-primary transition-colors">Gallery</a>
+              <a href="/pricing" className="hover:text-primary transition-colors">Pricing</a>
             </div>
             <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/")}
-              className="ml-4"
+              onClick={() => navigate("/auth")}
+              className="bg-primary hover:bg-primary/90 text-white"
             >
-              <Home className="h-5 w-5" />
+              Sign In
             </Button>
           </div>
         </nav>
       </header>
 
-      {/* Hero Section */}
-      <section className="container mx-auto px-4 py-16">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-12">
-          <div className="md:w-1/2 space-y-6 animate-fade-in">
-            <h1 className="text-4xl md:text-6xl font-bold font-serif bg-gradient-to-r from-primary to-[#FFA500] bg-clip-text text-transparent">
-              Transform Your Imagination into Coloring Masterpieces
-            </h1>
-            <p className="text-lg text-gray-600 max-w-lg">
-              Welcome to coloring.art, the ultimate AI-powered coloring book generator that brings your creativity to life!
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Button 
-                onClick={() => navigate("/create-coloring-plate")}
-                className="bg-primary hover:bg-primary/90 text-white px-8 py-6 text-lg"
-              >
-                <Type className="mr-2 h-5 w-5" />
-                Create Coloring Page
-              </Button>
-              <Button 
-                onClick={() => navigate("/create-mandala")}
-                className="bg-secondary hover:bg-secondary/90 text-white px-8 py-6 text-lg"
-              >
-                <FlowerIcon className="mr-2 h-5 w-5" />
-                Create Mandala
-              </Button>
-            </div>
-            <p className="text-sm text-gray-500">No credit card required • High-quality output</p>
-          </div>
-          <div className="md:w-1/2">
-            <img 
-              src="/lovable-uploads/d14e85bb-e030-4722-a7fd-7fdc12bc2cfe.png" 
-              alt="Coloring Page Example" 
-              className="w-full max-w-md mx-auto rounded-lg shadow-lg animate-fade-in"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* Features Grid */}
-      <section className="container mx-auto px-4 py-16 bg-white/50">
-        <div className="grid md:grid-cols-2 gap-12">
-          {/* Custom Mandalas Feature */}
-          <div className="space-y-6 p-8 bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center space-x-4">
-              <div className="p-3 bg-primary/10 rounded-lg">
-                <FlowerIcon className="h-6 w-6 text-primary" />
-              </div>
-              <h2 className="text-2xl font-bold font-serif text-primary">Custom Mandalas</h2>
-            </div>
-            <p className="text-gray-600">
-              Create unique mandalas based on your current state of mind. Our AI transforms your emotions
-              and intentions into beautiful, symmetrical designs perfect for mindful coloring.
-            </p>
-            <Button 
-              onClick={() => navigate("/create-mandala")}
-              variant="outline"
-              className="w-full"
-            >
-              Generate Your Mandala
-            </Button>
-          </div>
-
-          {/* Text-to-Coloring Feature */}
-          <div className="space-y-6 p-8 bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center space-x-4">
-              <div className="p-3 bg-secondary/10 rounded-lg">
-                <Type className="h-6 w-6 text-secondary" />
-              </div>
-              <h2 className="text-2xl font-bold font-serif text-secondary">Text to Coloring Page</h2>
-            </div>
-            <p className="text-gray-600">
-              Transform your words into stunning coloring pages. Type any phrase or story, and watch as our
-              AI converts it into an intricate, ready-to-color design.
-            </p>
-            <Button 
-              onClick={() => navigate("/create-coloring-plate")}
-              variant="outline"
-              className="w-full"
-            >
-              Create from Text
-            </Button>
-          </div>
-        </div>
-      </section>
+      <Hero />
+      <Features />
+      <Pricing />
 
       {/* Library Section */}
       <section className="container mx-auto px-4 py-16">
@@ -182,24 +102,6 @@ const Index = () => {
           ))}
         </div>
       </section>
-
-      {/* CTA Section */}
-      <section className="container mx-auto px-4 py-16 text-center">
-        <div className="max-w-3xl mx-auto space-y-6">
-          <h2 className="text-3xl md:text-4xl font-bold font-serif text-primary">
-            Ready to Start Your Creative Journey?
-          </h2>
-          <p className="text-lg text-gray-600">
-            Join our community and start creating beautiful, personalized coloring pages today.
-          </p>
-          <Button 
-            onClick={() => navigate("/auth")}
-            className="bg-primary hover:bg-primary/90 text-white px-8 py-6 text-lg"
-          >
-            Get Started Now
-          </Button>
-        </div>
-      </section>
     </div>
   );
 };
@@ -225,15 +127,15 @@ const sampleImages = [
 const faqs = [
   {
     question: "What is coloring.art?",
-    answer: "Coloring.art is an AI-powered platform that converts text descriptions and images into beautiful coloring pages."
+    answer: "Coloring.art is an AI-powered platform that offers two unique features: IdeaArtist for converting text into coloring pages, and SoulScape for creating personalized mandalas."
   },
   {
-    question: "Can I use coloring.art's AI coloring pages generator on PC and mobile?",
-    answer: "Yes, our platform is fully responsive and works on all devices including PC, tablets, and smartphones."
+    question: "How many free generations do I get?",
+    answer: "New users get 2 free generations to try out both IdeaArtist and SoulScape features before choosing a subscription plan."
   },
   {
-    question: "Can the AI-converted coloring pages be printed directly? Or do they need other processing?",
-    answer: "All generated coloring pages can be downloaded and printed directly without any additional processing required."
+    question: "What's included in the premium subscription?",
+    answer: "Premium subscribers get unlimited generations, advanced customization options, high-quality exports, exclusive designs, and priority support."
   }
 ];
 
