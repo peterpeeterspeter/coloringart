@@ -8,9 +8,12 @@ const AuthPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log("Checking authentication status...");
     // Check if user is already logged in
     supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth state changed:", event, session);
       if (session) {
+        console.log("User is authenticated, redirecting to home");
         navigate("/");
       }
     });
