@@ -1,8 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import "https://deno.land/x/xhr@0.1.0/mod.ts"
 
-const REPLICATE_API_TOKEN = Deno.env.get('REPLICATE_API_TOKEN')
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -21,30 +19,31 @@ serve(async (req) => {
     const prompt = generateMandalaPrompt(settings)
     console.log("Generated prompt:", prompt)
 
-    // Call Replicate API
-    const response = await fetch("https://api.replicate.com/v1/predictions", {
+    // Call SDXL Mandala API
+    const response = await fetch("https://api.codingdudecom.workers.dev/sdxl-mandala", {
       method: "POST",
       headers: {
-        Authorization: `Token ${REPLICATE_API_TOKEN}`,
         "Content-Type": "application/json",
+        "Authorization": `Bearer ${Deno.env.get('SDXL_API_KEY')}`,
       },
       body: JSON.stringify({
-        version: "39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
-        input: {
-          prompt: prompt,
-          negative_prompt: "ugly, blurry, low quality, distorted, disfigured",
-          width: 1024,
-          height: 1024,
-          num_outputs: 1,
-          scheduler: "K_EULER",
-          num_inference_steps: 50,
-          guidance_scale: 7.5,
-        },
+        prompt: prompt,
+        negative_prompt: "ugly, blurry, low quality, distorted, disfigured",
+        num_inference_steps: 30,
+        guidance_scale: 7.5,
+        width: 1024,
+        height: 1024,
       }),
-    })
+    });
 
-    const prediction = await response.json()
-    console.log("Replicate response:", prediction)
+    if (!response.ok) {
+      const error = await response.text();
+      console.error("API Error:", error);
+      throw new Error(`API returned ${response.status}: ${error}`);
+    }
+
+    const prediction = await response.json();
+    console.log("API response:", prediction);
 
     return new Response(JSON.stringify(prediction), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -79,17 +78,17 @@ function generateMandalaPrompt(settings: any): string {
   const naturalElement = settings.naturalElements;
   const timeOfDay = settings.timeOfDay;
 
-  return `A beautiful and personalized mandala with the following characteristics:
+  return `Create a beautiful and intricate mandala design with the following characteristics:
     - Emotional essence: ${emotions} with ${intensity}/10 intensity
     - Emotional quality: ${quality}
-    - Energy level: ${energy}
-    - Body focus: ${tension}
+    - Energy level: ${energy}/10
+    - Physical tension: ${tension}
     - Mental state: ${thoughtPattern}
-    - Detail level: ${detailLevel}
+    - Detail complexity: ${detailLevel}/10
     - Spiritual symbols: ${symbols}
-    - Intention: ${intention}
-    - Natural element: ${naturalElement}
+    - Spiritual intention: ${intention}
+    - Natural elements: ${naturalElement}
     - Time influence: ${timeOfDay}
     
-    Create a centered, symmetrical mandala with perfect balance, incorporating these elements into a harmonious spiritual artwork. Use sacred geometry and mystical symbolism to enhance the spiritual significance.`.replace(/\n\s+/g, ' ');
+    The mandala should be perfectly symmetrical, centered, and incorporate these elements into a harmonious spiritual artwork using sacred geometry.`.replace(/\n\s+/g, ' ');
 }
