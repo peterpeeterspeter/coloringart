@@ -36,7 +36,7 @@ export const Hero = () => {
           Create Mandala
         </Button>
         <Button
-          onClick={() => navigate("/custom-page")}
+          onClick={() => navigate("/create-coloring-plate")}
           className="bg-secondary hover:bg-secondary/90 text-white px-8 py-6 text-lg"
         >
           Custom Page
