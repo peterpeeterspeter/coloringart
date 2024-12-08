@@ -18,7 +18,7 @@ export const MandalaExplanation = ({ answers }: MandalaExplanationProps) => {
     const energy = answers.energyLevel || "";
     const tension = answers.bodyTension || "";
     
-    return `Your physical state shows ${energy.toLowerCase()}, with primary tension in ${tension.toLowerCase()}. 
+    return `Your physical state shows ${typeof energy === 'string' ? energy.toLowerCase() : ''}, with primary tension in ${typeof tension === 'string' ? tension.toLowerCase() : ''}. 
     According to ancient wisdom, this energy distribution pattern indicates a period of significant energetic transformation.`;
   };
 
@@ -26,7 +26,7 @@ export const MandalaExplanation = ({ answers }: MandalaExplanationProps) => {
     const thought = answers.thoughtPattern || "";
     const detail = answers.detailLevel || "";
     
-    return `Your mental state exhibits ${thought.toLowerCase()}, preferring ${detail.toLowerCase()}. 
+    return `Your mental state exhibits ${typeof thought === 'string' ? thought.toLowerCase() : ''}, preferring ${typeof detail === 'string' ? detail.toLowerCase() : ''}. 
     This cognitive pattern aligns with advanced states of consciousness development described in esoteric traditions.`;
   };
 
@@ -42,7 +42,7 @@ export const MandalaExplanation = ({ answers }: MandalaExplanationProps) => {
     const element = answers.naturalElements || "";
     const time = answers.timeOfDay || "";
     
-    return `Your connection to ${element.toLowerCase()} and affinity with ${time.toLowerCase()} 
+    return `Your connection to ${typeof element === 'string' ? element.toLowerCase() : ''} and affinity with ${typeof time === 'string' ? time.toLowerCase() : ''} 
     suggests alignment with natural cycles and elemental forces, a key aspect of spiritual development.`;
   };
 

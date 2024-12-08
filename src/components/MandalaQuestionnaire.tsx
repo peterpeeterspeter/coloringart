@@ -1,42 +1,12 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useSession } from "@supabase/auth-helpers-react";
-import { questions } from "./mandala/questions";
-import { FinalStep } from "./mandala/FinalStep";
-import { QuestionGroup } from "./mandala/QuestionGroup";
 import { useQuestionnaireState } from "@/hooks/useQuestionnaireState";
-import { MandalaPreview } from "./mandala/MandalaPreview";
+import { MandalaForm } from "./mandala/MandalaForm";
+import { MandalaSuccess } from "./mandala/MandalaSuccess";
 import { SubmitButton } from "./mandala/SubmitButton";
-import { MandalaExplanation } from "./mandala/MandalaExplanation";
-import { Download } from "lucide-react";
-import type { MandalaAnswers } from "@/types/mandala";
-
-// Group questions by category
-const questionGroups = [
-  {
-    title: "Emotional Center",
-    questions: questions.slice(0, 3),
-  },
-  {
-    title: "Physical Well-being",
-    questions: questions.slice(3, 5),
-  },
-  {
-    title: "Mental State",
-    questions: questions.slice(5, 7),
-  },
-  {
-    title: "Spiritual Connection",
-    questions: questions.slice(7, 9),
-  },
-  {
-    title: "Environmental Influence",
-    questions: questions.slice(9),
-  },
-];
 
 export const MandalaQuestionnaire = () => {
   const {
@@ -56,7 +26,6 @@ export const MandalaQuestionnaire = () => {
 
   const generateMandala = async () => {
     try {
-      // Initial request to start the generation
       const { data: initialData, error: initialError } = await supabase.functions.invoke('generate-mandala', {
         body: { settings: answers }
       });
@@ -64,7 +33,6 @@ export const MandalaQuestionnaire = () => {
       if (initialError) throw initialError;
       console.log("Initial response:", initialData);
 
-      // Poll for the result
       const checkResult = async (predictionId: string): Promise<string> => {
         const { data: statusData, error: statusError } = await supabase.functions.invoke('generate-mandala', {
           body: { predictionId }
@@ -79,7 +47,6 @@ export const MandalaQuestionnaire = () => {
           throw new Error("Image generation failed");
         }
         
-        // Wait before checking again
         await new Promise(resolve => setTimeout(resolve, 1000));
         return checkResult(predictionId);
       };
@@ -186,50 +153,23 @@ export const MandalaQuestionnaire = () => {
       <Card className="w-full max-w-4xl p-6 space-y-8 animate-fade-in">
         {!isSuccess ? (
           <>
-            <div className="space-y-12">
-              {questionGroups.map((group, index) => (
-                <div key={index} className="space-y-6">
-                  <h3 className="text-3xl font-bold text-center text-primary">
-                    {group.title}
-                  </h3>
-                  <QuestionGroup
-                    questions={group.questions}
-                    answers={answers}
-                    onAnswer={handleAnswer}
-                  />
-                </div>
-              ))}
-            </div>
-
-            <FinalStep
+            <MandalaForm
+              answers={answers}
               name={name}
               description={description}
-              answers={answers}
+              onAnswer={handleAnswer}
               onNameChange={setName}
               onDescriptionChange={setDescription}
             />
+            <SubmitButton isSubmitting={isSubmitting} onClick={handleSubmit} />
           </>
         ) : (
-          <>
-            <div className="text-center space-y-4">
-              <h2 className="text-2xl font-bold text-primary">Your Mandala is Ready!</h2>
-              <Button
-                onClick={handleDownload}
-                className="mt-4"
-                disabled={!generatedImage}
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Download Mandala
-              </Button>
-            </div>
-            
-            <MandalaPreview imageUrl={generatedImage} />
-            
-            <MandalaExplanation answers={answers} />
-          </>
+          <MandalaSuccess
+            imageUrl={generatedImage}
+            answers={answers}
+            onDownload={handleDownload}
+          />
         )}
-
-        {!isSuccess && <SubmitButton isSubmitting={isSubmitting} onClick={handleSubmit} />}
       </Card>
     </div>
   );
