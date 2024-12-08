@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useSession } from "@supabase/auth-helpers-react";
@@ -11,6 +10,8 @@ import { QuestionGroup } from "./mandala/QuestionGroup";
 import { useQuestionnaireState } from "@/hooks/useQuestionnaireState";
 import { MandalaPreview } from "./mandala/MandalaPreview";
 import { SubmitButton } from "./mandala/SubmitButton";
+import { MandalaExplanation } from "./mandala/MandalaExplanation";
+import { Download } from "lucide-react";
 import type { MandalaAnswers } from "@/types/mandala";
 
 // Group questions by category
@@ -50,7 +51,6 @@ export const MandalaQuestionnaire = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
-  const navigate = useNavigate();
   const { toast } = useToast();
   const session = useSession();
 
@@ -99,6 +99,35 @@ export const MandalaQuestionnaire = () => {
     }
   };
 
+  const handleDownload = async () => {
+    if (!generatedImage) return;
+
+    try {
+      const response = await fetch(generatedImage);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${name.toLowerCase().replace(/\s+/g, '-')}-mandala.png`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: "Success!",
+        description: "Your mandala has been downloaded",
+      });
+    } catch (error) {
+      console.error("Error downloading mandala:", error);
+      toast({
+        title: "Error",
+        description: "Failed to download mandala. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleSubmit = async () => {
     if (!session?.user?.id) {
       toast({
@@ -137,13 +166,8 @@ export const MandalaQuestionnaire = () => {
       setIsSuccess(true);
       toast({
         title: "Success!",
-        description: "Your mandala has been created. You'll be redirected in 5 seconds.",
+        description: "Your mandala has been created",
       });
-      
-      // Delay navigation to allow user to see the result
-      setTimeout(() => {
-        navigate("/");
-      }, 5000);
       
     } catch (error) {
       console.error("Error creating mandala:", error);
@@ -186,13 +210,25 @@ export const MandalaQuestionnaire = () => {
             />
           </>
         ) : (
-          <div className="text-center space-y-4">
-            <h2 className="text-2xl font-bold text-primary">Your Mandala is Ready!</h2>
-            <p className="text-gray-600">You'll be redirected to the home page in a few seconds...</p>
-          </div>
+          <>
+            <div className="text-center space-y-4">
+              <h2 className="text-2xl font-bold text-primary">Your Mandala is Ready!</h2>
+              <Button
+                onClick={handleDownload}
+                className="mt-4"
+                disabled={!generatedImage}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Download Mandala
+              </Button>
+            </div>
+            
+            <MandalaPreview imageUrl={generatedImage} />
+            
+            <MandalaExplanation answers={answers} />
+          </>
         )}
 
-        <MandalaPreview imageUrl={generatedImage} />
         {!isSuccess && <SubmitButton isSubmitting={isSubmitting} onClick={handleSubmit} />}
       </Card>
     </div>
