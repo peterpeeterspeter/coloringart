@@ -8,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import Index from "./pages/Index";
 import CreateMandala from "./pages/CreateMandala";
 import CreateColoringPlate from "./pages/CreateColoringPlate";
+import Gallery from "./pages/Gallery";
+import Pricing from "./pages/Pricing";
 import AuthPage from "./pages/Auth";
 import { useEffect, useState } from "react";
 
@@ -66,6 +68,22 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <CreateColoringPlate />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/gallery"
+              element={
+                <ProtectedRoute>
+                  <Gallery />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/pricing"
+              element={
+                <ProtectedRoute>
+                  <Pricing />
                 </ProtectedRoute>
               }
             />
