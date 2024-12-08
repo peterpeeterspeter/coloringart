@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useSession } from "@supabase/auth-helpers-react";
 
 const questions = [
   {
@@ -35,6 +36,7 @@ export const MandalaQuestionnaire = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const session = useSession();
 
   const handleAnswer = (value: string) => {
     setAnswers((prev) => ({
@@ -56,12 +58,22 @@ export const MandalaQuestionnaire = () => {
         return;
       }
 
+      if (!session?.user?.id) {
+        toast({
+          title: "Authentication Error",
+          description: "You must be logged in to create a mandala",
+          variant: "destructive",
+        });
+        return;
+      }
+
       setIsSubmitting(true);
       try {
         const { error } = await supabase.from("mandalas").insert({
           name,
           description,
           settings: answers,
+          user_id: session.user.id,
         });
 
         if (error) throw error;
