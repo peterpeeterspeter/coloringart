@@ -16,7 +16,7 @@ export const Features = () => {
             <h2 className="text-2xl font-bold font-serif text-primary">SoulScape: Personalized Mandalas</h2>
           </div>
           <img 
-            src="/lovable-uploads/d14e85bb-e030-4722-a7fd-7fdc12bc2cfe.png"
+            src="/lovable-uploads/4764d9fe-d0bf-4753-a82b-570a8026f2d1.png"
             alt="Mandala Example" 
             className="w-full h-48 object-cover rounded-lg mb-4"
           />
@@ -41,8 +41,8 @@ export const Features = () => {
             <h2 className="text-2xl font-bold font-serif text-secondary">IdeaArtist: Transform Ideas</h2>
           </div>
           <img 
-            src="/lovable-uploads/d14e85bb-e030-4722-a7fd-7fdc12bc2cfe.png"
-            alt="Coloring Page Example" 
+            src="/lovable-uploads/16597c91-0047-43ff-b8ec-a27a1b449c42.png"
+            alt="Bird Coloring Page Example" 
             className="w-full h-48 object-cover rounded-lg mb-4"
           />
           <p className="text-gray-600">

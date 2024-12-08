@@ -17,7 +17,7 @@ const Index = () => {
             <img 
               src="/lovable-uploads/05478edb-875e-4a7a-8662-3f2fad9e4121.png" 
               alt="Coloring.art Logo" 
-              className="h-24 md:h-28"
+              className="h-16"
             />
           </div>
           <div className="flex items-center space-x-6">
@@ -66,7 +66,23 @@ const Index = () => {
 
         {/* Sample Gallery */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {sampleImages.map((image, index) => (
+          {[
+            {
+              url: "/lovable-uploads/16597c91-0047-43ff-b8ec-a27a1b449c42.png",
+              title: "Bird in Leaf Frame",
+              pages: "12"
+            },
+            {
+              url: "/lovable-uploads/3494b801-54fc-4fe4-ad69-ff539b6e9d4a.png",
+              title: "Rose Mandala",
+              pages: "8"
+            },
+            {
+              url: "/lovable-uploads/c9eaccba-8754-4ba9-a3ee-0f6a5e82988e.png",
+              title: "Cat in Kimono",
+              pages: "15"
+            }
+          ].map((image, index) => (
             <div 
               key={index} 
               className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow animate-fade-in"
@@ -105,24 +121,6 @@ const Index = () => {
     </div>
   );
 };
-
-const sampleImages = [
-  {
-    url: "https://placehold.co/400x400",
-    title: "Christmas Tree",
-    pages: "12"
-  },
-  {
-    url: "https://placehold.co/400x400",
-    title: "Cupcake",
-    pages: "8"
-  },
-  {
-    url: "https://placehold.co/400x400",
-    title: "Dolphin",
-    pages: "15"
-  }
-];
 
 const faqs = [
   {
