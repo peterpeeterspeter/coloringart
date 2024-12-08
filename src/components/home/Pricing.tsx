@@ -99,7 +99,7 @@ export const Pricing = () => {
 
         <div className="bg-white p-8 rounded-xl shadow-lg">
           <h3 className="text-xl font-bold mb-4">Pay As You Go</h3>
-          <p className="text-3xl font-bold mb-6">$14.99<span className="text-sm text-gray-600">/20 pages</span></p>
+          <p className="text-3xl font-bold mb-6">$4.99<span className="text-sm text-gray-600">/20 pages</span></p>
           <ul className="space-y-4 mb-8">
             <li className="flex items-center">
               <Check className="h-5 w-5 text-green-500 mr-2" />

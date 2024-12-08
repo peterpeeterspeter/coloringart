@@ -15,6 +15,11 @@ export const Features = () => {
             </div>
             <h2 className="text-2xl font-bold font-serif text-primary">SoulScape: Personalized Mandalas</h2>
           </div>
+          <img 
+            src="/lovable-uploads/d14e85bb-e030-4722-a7fd-7fdc12bc2cfe.png"
+            alt="Mandala Example" 
+            className="w-full h-48 object-cover rounded-lg mb-4"
+          />
           <p className="text-gray-600">
             Create unique mandalas that reflect your inner state. Our AI transforms your emotions
             and intentions into beautiful, symmetrical designs perfect for mindful coloring.
@@ -35,6 +40,11 @@ export const Features = () => {
             </div>
             <h2 className="text-2xl font-bold font-serif text-secondary">IdeaArtist: Transform Ideas</h2>
           </div>
+          <img 
+            src="/lovable-uploads/d14e85bb-e030-4722-a7fd-7fdc12bc2cfe.png"
+            alt="Coloring Page Example" 
+            className="w-full h-48 object-cover rounded-lg mb-4"
+          />
           <p className="text-gray-600">
             Turn your words into stunning coloring pages. Type any phrase or story, and watch as our
             AI converts it into an intricate, ready-to-color design.

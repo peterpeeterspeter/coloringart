@@ -5,9 +5,14 @@ export const Hero = () => {
   const navigate = useNavigate();
 
   return (
-    <section className="container mx-auto px-4 py-16">
+    <section className="container mx-auto px-4 py-8">
       <div className="flex flex-col md:flex-row items-center justify-between gap-12">
         <div className="md:w-1/2 space-y-6 animate-fade-in">
+          <img 
+            src="/lovable-uploads/05478edb-875e-4a7a-8662-3f2fad9e4121.png" 
+            alt="Coloring.art Logo" 
+            className="h-48 md:h-56 mb-8" 
+          />
           <h1 className="text-4xl md:text-6xl font-bold font-serif bg-gradient-to-r from-primary to-[#FFA500] bg-clip-text text-transparent">
             Transform Your Imagination into Coloring Masterpieces
           </h1>
@@ -33,8 +38,8 @@ export const Hero = () => {
         <div className="md:w-1/2">
           <img 
             src="/lovable-uploads/d14e85bb-e030-4722-a7fd-7fdc12bc2cfe.png" 
-            alt="Coloring Page Example" 
-            className="w-full max-w-md mx-auto rounded-lg shadow-lg animate-fade-in"
+            alt="Dragon Coloring Page" 
+            className="w-full max-w-sm mx-auto rounded-lg shadow-lg animate-fade-in"
           />
         </div>
       </div>
