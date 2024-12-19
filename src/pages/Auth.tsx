@@ -4,9 +4,30 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Home } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
 const AuthPage = () => {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check if user is already logged in
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        navigate("/");
+      }
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        navigate("/");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-[#FFF8F0]">
@@ -36,8 +57,19 @@ const AuthPage = () => {
         <div className="bg-white p-8 rounded-lg shadow-lg">
           <Auth
             supabaseClient={supabase}
-            appearance={{ theme: ThemeSupa }}
+            appearance={{ 
+              theme: ThemeSupa,
+              variables: {
+                default: {
+                  colors: {
+                    brand: 'rgb(var(--primary))',
+                    brandAccent: 'rgb(var(--primary))',
+                  },
+                },
+              },
+            }}
             theme="light"
+            providers={[]}
           />
         </div>
       </div>
