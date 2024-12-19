@@ -17,6 +17,7 @@ const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [generationCount, setGenerationCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -24,6 +25,10 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         setIsAuthenticated(!!session);
+
+        // Get generation count from local storage
+        const count = parseInt(localStorage.getItem('generationCount') || '0');
+        setGenerationCount(count);
       } catch (error) {
         console.error('Error checking auth status:', error);
         setIsAuthenticated(false);
@@ -52,7 +57,12 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  return isAuthenticated ? children : <Navigate to="/auth" />;
+  // Allow access if authenticated or if under 10 generations
+  if (isAuthenticated || generationCount < 10) {
+    return children;
+  }
+
+  return <Navigate to="/auth" />;
 };
 
 const App = () => (

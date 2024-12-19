@@ -114,12 +114,17 @@ export const ColoringPlateQuestionnaire = () => {
   };
 
   const handleSubmit = async () => {
-    if (!session?.user?.id) {
+    // Increment generation count
+    const currentCount = parseInt(localStorage.getItem('generationCount') || '0');
+    localStorage.setItem('generationCount', (currentCount + 1).toString());
+
+    if (!session?.user?.id && currentCount >= 9) {
       toast({
-        title: "Authentication Error",
-        description: "You must be logged in to create a coloring plate",
+        title: "Free Generations Limit Reached",
+        description: "You've reached your 10 free generations limit. Please sign in to continue.",
         variant: "destructive",
       });
+      navigate("/auth");
       return;
     }
 
