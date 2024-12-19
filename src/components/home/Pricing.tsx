@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useSession, useSupabaseClient } from "@supabase/auth-helpers-react";
 import { toast } from "sonner";
+import { useEffect } from "react";
 
 export const Pricing = () => {
   const navigate = useNavigate();
@@ -42,7 +43,7 @@ export const Pricing = () => {
   };
 
   // Handle redirect back from Stripe
-  React.useEffect(() => {
+  useEffect(() => {
     const queryParams = new URLSearchParams(window.location.search);
     const success = queryParams.get('success');
     const canceled = queryParams.get('canceled');
