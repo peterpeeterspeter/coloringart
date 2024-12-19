@@ -23,7 +23,7 @@ export const Pricing = () => {
         body: { 
           priceId, 
           mode,
-          successUrl: `${window.location.origin}/pricing?success=true`,
+          successUrl: `${window.location.origin}/?payment=success`,
           cancelUrl: `${window.location.origin}/pricing?canceled=true`
         }
       });
@@ -54,13 +54,12 @@ export const Pricing = () => {
   // Handle redirect back from Stripe
   useEffect(() => {
     const queryParams = new URLSearchParams(window.location.search);
-    const success = queryParams.get('success');
+    const payment = queryParams.get('payment');
     const canceled = queryParams.get('canceled');
 
-    if (success) {
+    if (payment === 'success') {
       toast.success('Payment successful! Thank you for your purchase.');
-      // Clean up URL
-      window.history.replaceState({}, '', '/pricing');
+      navigate('/', { replace: true }); // Redirect to home and replace history
     }
 
     if (canceled) {
@@ -68,7 +67,7 @@ export const Pricing = () => {
       // Clean up URL
       window.history.replaceState({}, '', '/pricing');
     }
-  }, []);
+  }, [navigate]);
 
   return (
     <section className="container mx-auto px-4 py-16">

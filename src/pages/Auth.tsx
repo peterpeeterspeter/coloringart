@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Home } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 
 const AuthPage = () => {
   const navigate = useNavigate();
@@ -21,11 +21,7 @@ const AuthPage = () => {
         }
       } catch (error) {
         console.error('Auth error:', error);
-        toast({
-          title: "Authentication Error",
-          description: "There was a problem checking your login status.",
-          variant: "destructive",
-        });
+        toast.error("Authentication error. Please try again.");
       } finally {
         setIsLoading(false);
       }
@@ -37,6 +33,7 @@ const AuthPage = () => {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
+        console.log('Auth state changed: User logged in');
         navigate("/");
       }
     });
