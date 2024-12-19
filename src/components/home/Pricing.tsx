@@ -90,7 +90,7 @@ export const Pricing = () => {
             </li>
           </ul>
           <Button 
-            onClick={() => handleSubscribe('price_1OyBxDE63xFsdntvXBXPPGWm', 'subscription')}
+            onClick={() => handleSubscribe('prod_RQYHUeu1DccdW8', 'subscription')}
             className="w-full bg-primary text-white"
           >
             Subscribe Now
@@ -119,7 +119,7 @@ export const Pricing = () => {
             </li>
           </ul>
           <Button 
-            onClick={() => handleSubscribe('price_1OyBxsE63xFsdntvXBXPPGWm', 'payment')}
+            onClick={() => handleSubscribe('prod_RQYI12iFxOJwvK', 'payment')}
             variant="outline"
             className="w-full"
           >
