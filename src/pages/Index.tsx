@@ -17,7 +17,7 @@ const Index = () => {
             <img 
               src="/lovable-uploads/05478edb-875e-4a7a-8662-3f2fad9e4121.png" 
               alt="Coloring.art Logo" 
-              className="h-16"
+              className="h-24 md:h-32"
             />
           </div>
           <div className="flex items-center space-x-6">
