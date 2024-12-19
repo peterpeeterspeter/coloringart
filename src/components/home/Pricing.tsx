@@ -1,9 +1,9 @@
+import { useEffect } from "react";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useSession, useSupabaseClient } from "@supabase/auth-helpers-react";
 import { toast } from "sonner";
-import { useEffect } from "react";
 
 export const Pricing = () => {
   const navigate = useNavigate();
@@ -35,7 +35,12 @@ export const Pricing = () => {
       
       if (data?.url) {
         console.log('Redirecting to checkout:', data.url);
-        window.location.href = data.url;
+        // Force redirect to top-level window
+        if (window.top) {
+          window.top.location.href = data.url;
+        } else {
+          window.location.href = data.url;
+        }
       } else {
         console.error('No checkout URL received:', data);
         throw new Error('No checkout URL received');

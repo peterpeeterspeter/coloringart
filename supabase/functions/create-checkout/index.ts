@@ -5,7 +5,9 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Max-Age': '86400',
+};
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -14,8 +16,8 @@ serve(async (req) => {
   }
 
   try {
-    const { priceId, mode } = await req.json()
-    console.log('Received request with priceId:', priceId, 'and mode:', mode)
+    const { priceId, mode, successUrl, cancelUrl } = await req.json()
+    console.log('Received request with:', { priceId, mode, successUrl, cancelUrl })
     
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -37,7 +39,7 @@ serve(async (req) => {
       throw new Error('Stripe secret key not configured')
     }
 
-    console.log('Initializing Stripe with secret key')
+    console.log('Initializing Stripe')
     const stripe = new Stripe(stripeSecretKey, {
       apiVersion: '2023-10-16',
     })
@@ -54,7 +56,7 @@ serve(async (req) => {
       console.log('Found existing customer:', customer_id)
       
       if (mode === 'subscription') {
-        console.log('Checking existing subscriptions for customer')
+        console.log('Checking existing subscriptions')
         const subscriptions = await stripe.subscriptions.list({
           customer: customers.data[0].id,
           status: 'active',
@@ -68,15 +70,6 @@ serve(async (req) => {
       }
     }
 
-    // Verify price exists before creating session
-    try {
-      const price = await stripe.prices.retrieve(priceId)
-      console.log('Price verified:', price.id)
-    } catch (error) {
-      console.error('Error retrieving price:', error)
-      throw new Error(`Invalid price ID: ${priceId}`)
-    }
-
     console.log('Creating checkout session...')
     const session = await stripe.checkout.sessions.create({
       customer: customer_id,
@@ -88,8 +81,10 @@ serve(async (req) => {
         },
       ],
       mode: mode,
-      success_url: `${req.headers.get('origin')}/`,
-      cancel_url: `${req.headers.get('origin')}/pricing`,
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+      allow_promotion_codes: true,
+      billing_address_collection: 'required',
     })
 
     console.log('Checkout session created:', session.id)
