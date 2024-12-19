@@ -16,6 +16,7 @@ export const Pricing = () => {
     }
 
     try {
+      console.log('Creating checkout session with:', { priceId, mode });
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { priceId, mode }
       });
@@ -90,7 +91,7 @@ export const Pricing = () => {
             </li>
           </ul>
           <Button 
-            onClick={() => handleSubscribe('price_1QXhBQAhsTfuXhtS3SUSYbvO', 'subscription')}
+            onClick={() => handleSubscribe('price_1QXhwDAhsTfuXhtSNJBPpxXB', 'subscription')}
             className="w-full bg-primary text-white"
           >
             Subscribe Now
@@ -119,7 +120,7 @@ export const Pricing = () => {
             </li>
           </ul>
           <Button 
-            onClick={() => handleSubscribe('price_1QXhCLAhsTfuXhtSNWqnvF8m', 'payment')}
+            onClick={() => handleSubscribe('price_1QXhwsAhsTfuXhtSPXpQWxEm', 'payment')}
             variant="outline"
             className="w-full"
           >
