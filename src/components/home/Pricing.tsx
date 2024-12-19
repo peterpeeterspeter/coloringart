@@ -16,20 +16,49 @@ export const Pricing = () => {
     }
 
     try {
-      console.log('Creating checkout session with:', { priceId, mode });
+      toast.loading('Preparing checkout...');
+      
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { priceId, mode }
+        body: { 
+          priceId, 
+          mode,
+          successUrl: `${window.location.origin}/pricing?success=true`,
+          cancelUrl: `${window.location.origin}/pricing?canceled=true`
+        }
       });
 
       if (error) throw error;
+      
       if (data?.url) {
+        // Redirect to Stripe Checkout
         window.location.href = data.url;
+      } else {
+        throw new Error('No checkout URL received');
       }
     } catch (error) {
       console.error('Error creating checkout session:', error);
       toast.error('Failed to start checkout process. Please try again.');
     }
   };
+
+  // Handle redirect back from Stripe
+  React.useEffect(() => {
+    const queryParams = new URLSearchParams(window.location.search);
+    const success = queryParams.get('success');
+    const canceled = queryParams.get('canceled');
+
+    if (success) {
+      toast.success('Payment successful! Thank you for your purchase.');
+      // Clean up URL
+      window.history.replaceState({}, '', '/pricing');
+    }
+
+    if (canceled) {
+      toast.error('Payment canceled. If you have any questions, please contact support.');
+      // Clean up URL
+      window.history.replaceState({}, '', '/pricing');
+    }
+  }, []);
 
   return (
     <section className="container mx-auto px-4 py-16">
