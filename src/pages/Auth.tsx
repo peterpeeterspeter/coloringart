@@ -4,23 +4,38 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Home } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { toast } from "@/components/ui/use-toast";
 
 const AuthPage = () => {
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is already logged in
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        navigate("/");
+    const checkSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        if (session) {
+          navigate("/");
+        }
+      } catch (error) {
+        console.error('Auth error:', error);
+        toast({
+          title: "Authentication Error",
+          description: "There was a problem checking your login status.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
       }
-    });
+    };
 
-    // Listen for auth changes
+    checkSession();
+
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
         navigate("/");
       }
@@ -28,6 +43,14 @@ const AuthPage = () => {
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-[#FFF8F0]">
