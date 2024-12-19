@@ -28,12 +28,16 @@ export const Pricing = () => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Checkout error:', error);
+        throw error;
+      }
       
       if (data?.url) {
-        // Redirect to Stripe Checkout
+        console.log('Redirecting to checkout:', data.url);
         window.location.href = data.url;
       } else {
+        console.error('No checkout URL received:', data);
         throw new Error('No checkout URL received');
       }
     } catch (error) {
