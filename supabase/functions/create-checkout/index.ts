@@ -8,12 +8,14 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
     const { priceId, mode } = await req.json()
+    console.log('Received request with priceId:', priceId, 'and mode:', mode)
     
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -34,6 +36,7 @@ serve(async (req) => {
       apiVersion: '2023-10-16',
     })
 
+    console.log('Looking up customer with email:', email)
     const customers = await stripe.customers.list({
       email: email,
       limit: 1
@@ -42,8 +45,10 @@ serve(async (req) => {
     let customer_id = undefined
     if (customers.data.length > 0) {
       customer_id = customers.data[0].id
+      console.log('Found existing customer:', customer_id)
       
       if (mode === 'subscription') {
+        console.log('Checking existing subscriptions for customer')
         const subscriptions = await stripe.subscriptions.list({
           customer: customers.data[0].id,
           status: 'active',
@@ -57,7 +62,7 @@ serve(async (req) => {
       }
     }
 
-    console.log('Creating payment session...')
+    console.log('Creating checkout session...')
     const session = await stripe.checkout.sessions.create({
       customer: customer_id,
       customer_email: customer_id ? undefined : email,
@@ -69,10 +74,10 @@ serve(async (req) => {
       ],
       mode: mode,
       success_url: `${req.headers.get('origin')}/`,
-      cancel_url: `${req.headers.get('origin')}/`,
+      cancel_url: `${req.headers.get('origin')}/pricing`,
     })
 
-    console.log('Payment session created:', session.id)
+    console.log('Checkout session created:', session.id)
     return new Response(
       JSON.stringify({ url: session.url }),
       { 
@@ -81,9 +86,12 @@ serve(async (req) => {
       }
     )
   } catch (error) {
-    console.error('Error creating payment session:', error)
+    console.error('Error creating checkout session:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        details: error.toString()
+      }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
