@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useSession } from "@supabase/auth-helpers-react";
 import { ColoringPlateForm } from "./coloring-plate/ColoringPlateForm";
 import { ColoringPlateSuccess } from "./coloring-plate/ColoringPlateSuccess";
+import { useNavigate } from "react-router-dom";
 
 export const ColoringPlateQuestionnaire = () => {
   const [name, setName] = useState("");
@@ -16,6 +17,7 @@ export const ColoringPlateQuestionnaire = () => {
   const [isSuccess, setIsSuccess] = useState(false);
   const { toast } = useToast();
   const session = useSession();
+  const navigate = useNavigate();
 
   const generateColoringPlate = async () => {
     try {
