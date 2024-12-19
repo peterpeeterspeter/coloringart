@@ -32,7 +32,13 @@ serve(async (req) => {
       throw new Error('No email found')
     }
 
-    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
+    const stripeSecretKey = Deno.env.get('STRIPE_SECRET_KEY')
+    if (!stripeSecretKey) {
+      throw new Error('Stripe secret key not configured')
+    }
+
+    console.log('Initializing Stripe with secret key')
+    const stripe = new Stripe(stripeSecretKey, {
       apiVersion: '2023-10-16',
     })
 
@@ -60,6 +66,15 @@ serve(async (req) => {
           throw new Error("Already subscribed to this plan")
         }
       }
+    }
+
+    // Verify price exists before creating session
+    try {
+      const price = await stripe.prices.retrieve(priceId)
+      console.log('Price verified:', price.id)
+    } catch (error) {
+      console.error('Error retrieving price:', error)
+      throw new Error(`Invalid price ID: ${priceId}`)
     }
 
     console.log('Creating checkout session...')
