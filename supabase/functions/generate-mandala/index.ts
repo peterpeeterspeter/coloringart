@@ -32,12 +32,11 @@ serve(async (req) => {
     );
 
     // Generate prompt from settings
-    const prompt = `Create a black and white line art mandala design with the following elements: ${
-      Object.entries(settings)
-        .filter(([_, value]) => value && value !== '')
-        .map(([_, value]) => Array.isArray(value) ? value.join(', ') : value)
-        .join(', ')
-    }. Make it symmetrical and balanced, with clear, well-defined lines suitable for coloring.`;
+    const promptElements = Object.entries(settings)
+      .filter(([_, value]) => value && value !== '')
+      .map(([_, value]) => Array.isArray(value) ? value.join(', ') : value);
+
+    const prompt = `Create a black and white line art mandala design with the following elements: ${promptElements.join(', ')}. Make it symmetrical and balanced, with clear, well-defined lines suitable for coloring.`;
 
     console.log("Generated prompt:", prompt);
 
