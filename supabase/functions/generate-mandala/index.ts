@@ -33,7 +33,7 @@ serve(async (req) => {
       );
     }
 
-    // Validate settings
+    // Basic settings validation
     if (!settings || typeof settings !== 'object') {
       console.error("Invalid settings object:", settings);
       return new Response(
@@ -45,34 +45,24 @@ serve(async (req) => {
       );
     }
 
-    // Ensure settings has required properties
-    const requiredSettings = [
-      'emotions',
-      'spiritualSymbols',
-      'emotionalIntensity',
-      'emotionalQuality',
-      'energyLevel',
-      'bodyTension',
-      'thoughtPattern',
-      'detailLevel',
-      'spiritualIntention',
-      'naturalElements',
-      'timeOfDay'
-    ];
+    // Default settings
+    const defaultSettings = {
+      emotions: "balanced",
+      spiritualSymbols: "geometric",
+      emotionalIntensity: "5",
+      emotionalQuality: "harmonious",
+      energyLevel: "Medium (balanced, regular patterns)",
+      bodyTension: "Center (influences core design)",
+      thoughtPattern: "Creative (organic, flowing patterns)",
+      detailLevel: "Moderately detailed (balanced complexity)",
+      spiritualIntention: "Inner peace",
+      naturalElements: "Earth (solid, grounding patterns)",
+      timeOfDay: "Noon (bold, clear patterns)"
+    };
 
-    const missingSettings = requiredSettings.filter(key => !(key in settings));
-    if (missingSettings.length > 0) {
-      console.error("Missing required settings:", missingSettings);
-      return new Response(
-        JSON.stringify({ error: `Missing required settings: ${missingSettings.join(', ')}` }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
-
-    const prompt = generateEnhancedPrompt(settings);
+    // Merge default settings with provided settings
+    const finalSettings = { ...defaultSettings, ...settings };
+    const prompt = generateEnhancedPrompt(finalSettings);
     console.log("Generated prompt:", prompt);
 
     const response = await fetch("https://api.replicate.com/v1/predictions", {

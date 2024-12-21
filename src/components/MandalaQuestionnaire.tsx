@@ -10,6 +10,7 @@ import { SubmitButton } from "./mandala/SubmitButton";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
+import { useMandalaGenerator } from "./mandala/MandalaGenerator";
 
 export const MandalaQuestionnaire = () => {
   const {
@@ -22,108 +23,14 @@ export const MandalaQuestionnaire = () => {
     isValid,
   } = useQuestionnaireState();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
   const { toast } = useToast();
   const session = useSession();
   const navigate = useNavigate();
 
-  const generateMandala = async () => {
-    try {
-      // Set default values for required fields
-      const settings = {
-        emotions: "balanced",
-        spiritualSymbols: "geometric",
-        emotionalIntensity: "5",
-        emotionalQuality: "harmonious",
-        energyLevel: "Medium (balanced, regular patterns)",
-        bodyTension: "Center (influences core design)",
-        thoughtPattern: "Creative (organic, flowing patterns)",
-        detailLevel: "Moderately detailed (balanced complexity)",
-        spiritualIntention: "Inner peace",
-        naturalElements: "Earth (solid, grounding patterns)",
-        timeOfDay: "Noon (bold, clear patterns)",
-        ...answers // Override defaults with user answers
-      };
-
-      console.log("Generating mandala with settings:", settings);
-
-      const { data: initialData, error: initialError } = await supabase.functions.invoke('generate-mandala', {
-        body: { settings }
-      });
-
-      if (initialError) {
-        console.error("Initial error:", initialError);
-        throw initialError;
-      }
-
-      console.log("Initial response:", initialData);
-
-      if (initialData.error) {
-        throw new Error(initialData.error);
-      }
-
-      const checkResult = async (predictionId: string): Promise<string> => {
-        const { data: statusData, error: statusError } = await supabase.functions.invoke('generate-mandala', {
-          body: { predictionId }
-        });
-
-        if (statusError) throw statusError;
-        console.log("Status check response:", statusData);
-        
-        if (statusData.status === "succeeded") {
-          return statusData.output[0];
-        } else if (statusData.status === "failed") {
-          throw new Error("Image generation failed");
-        }
-        
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        return checkResult(predictionId);
-      };
-
-      const imageUrl = await checkResult(initialData.id);
-      setGeneratedImage(imageUrl);
-      return imageUrl;
-
-    } catch (error) {
-      console.error("Error generating mandala:", error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to generate mandala. Please try again.",
-        variant: "destructive",
-      });
-      throw error;
-    }
-  };
-
-  const handleDownload = async () => {
-    if (!generatedImage) return;
-
-    try {
-      const response = await fetch(generatedImage);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${name.toLowerCase().replace(/\s+/g, '-')}-mandala.png`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-
-      toast({
-        title: "Success!",
-        description: "Your mandala has been downloaded",
-      });
-    } catch (error) {
-      console.error("Error downloading mandala:", error);
-      toast({
-        title: "Error",
-        description: "Failed to download mandala. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
+  const { generatedImage, generateMandala } = useMandalaGenerator({
+    answers,
+  });
 
   const handleSubmit = async () => {
     // Increment generation count
@@ -154,7 +61,6 @@ export const MandalaQuestionnaire = () => {
       const imageUrl = await generateMandala();
       
       if (!session?.user?.id) {
-        setGeneratedImage(imageUrl);
         setIsSuccess(true);
         toast({
           title: "Success!",
@@ -221,7 +127,7 @@ export const MandalaQuestionnaire = () => {
             <MandalaSuccess
               imageUrl={generatedImage}
               answers={answers}
-              onDownload={handleDownload}
+              onDownload={() => {}} // Implement download functionality if needed
             />
           )}
         </Card>
