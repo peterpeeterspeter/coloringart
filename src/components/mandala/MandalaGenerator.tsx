@@ -7,29 +7,6 @@ interface MandalaGeneratorProps {
   answers: MandalaAnswers;
 }
 
-export const generateEnhancedPrompt = (answers: MandalaAnswers) => {
-  const basePrompt = "Create a line art mandala in black and white with the following characteristics:";
-  const emotions = Array.isArray(answers.emotions) ? answers.emotions.join(", ") : "";
-  const symbols = Array.isArray(answers.spiritualSymbols) ? answers.spiritualSymbols.join(", ") : "";
-  
-  const prompt = `${basePrompt}
-    Emotions: ${emotions}
-    Intensity: ${answers.emotionalIntensity || "balanced"}
-    Quality: ${answers.emotionalQuality || "harmonious"}
-    Energy: ${answers.energyLevel || "balanced"}
-    Tension: ${answers.bodyTension || "relaxed"}
-    Thought Pattern: ${answers.thoughtPattern || "flowing"}
-    Detail Level: ${answers.detailLevel || "moderate"}
-    Spiritual Symbols: ${symbols}
-    Intention: ${answers.spiritualIntention || "peace"}
-    Natural Elements: ${answers.naturalElements || "balanced"}
-    Time of Day: ${answers.timeOfDay || "daylight"}
-    Make it suitable for coloring with clear, well-defined lines.
-    Negative prompt: shadows, gradient`;
-
-  return prompt;
-};
-
 export const useMandalaGenerator = ({ answers }: MandalaGeneratorProps) => {
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -37,14 +14,22 @@ export const useMandalaGenerator = ({ answers }: MandalaGeneratorProps) => {
   const generateMandala = async () => {
     try {
       setIsGenerating(true);
-      const enhancedPrompt = generateEnhancedPrompt(answers);
+      console.log("Generating mandala with settings:", answers);
       
       const { data: initialData, error: initialError } = await supabase.functions.invoke('generate-mandala', {
-        body: { settings: { prompt: enhancedPrompt } }
+        body: { settings: answers }
       });
 
-      if (initialError) throw initialError;
+      if (initialError) {
+        console.error("Initial error:", initialError);
+        throw initialError;
+      }
+
       console.log("Initial response:", initialData);
+
+      if (initialData.error) {
+        throw new Error(initialData.error);
+      }
 
       const checkResult = async (predictionId: string): Promise<string> => {
         const { data: statusData, error: statusError } = await supabase.functions.invoke('generate-mandala', {
