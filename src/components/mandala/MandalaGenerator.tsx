@@ -15,8 +15,8 @@ export const useMandalaGenerator = ({ answers }: MandalaGeneratorProps) => {
     try {
       setIsGenerating(true);
       
-      // Ensure we have at least some settings
-      if (!answers || Object.keys(answers).length === 0) {
+      // Ensure we have valid settings
+      if (!answers || typeof answers !== 'object' || Object.keys(answers).length === 0) {
         throw new Error("Please provide at least one answer to generate a mandala");
       }
       

@@ -13,7 +13,7 @@ serve(async (req) => {
 
   try {
     const { settings, predictionId } = await req.json();
-    console.log("Received request with settings:", settings);
+    console.log("Received request with:", { settings, predictionId });
     
     // Handle status check requests
     if (predictionId) {
@@ -35,9 +35,9 @@ serve(async (req) => {
 
     // Validate settings
     if (!settings || typeof settings !== 'object' || Object.keys(settings).length === 0) {
-      console.error("Invalid settings:", settings);
+      console.error("Invalid settings received:", settings);
       return new Response(
-        JSON.stringify({ error: "Settings object is required and must be a valid object" }),
+        JSON.stringify({ error: "Settings object is required and must be a valid object with at least one property" }),
         { 
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
