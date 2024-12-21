@@ -1,12 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 import { HfInference } from 'https://esm.sh/@huggingface/inference@2.3.2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Max-Age': '86400',
 }
 
 serve(async (req) => {
@@ -23,7 +22,8 @@ serve(async (req) => {
     const { settings, jobId } = await req.json();
     console.log("Request details:", { settings, jobId });
 
-    if (!settings || typeof settings !== 'object' || Array.isArray(settings)) {
+    // Validate inputs
+    if (!settings || typeof settings !== 'object') {
       throw new Error("Invalid settings provided");
     }
 
@@ -32,11 +32,11 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Simplified prompt generation to avoid recursion
+    // Generate prompt from settings
     const prompt = `Create a black and white line art mandala design with the following elements: ${
       Object.entries(settings)
         .filter(([_, value]) => value && value !== '')
-        .map(([_, value]) => value)
+        .map(([_, value]) => Array.isArray(value) ? value.join(', ') : value)
         .join(', ')
     }. Make it symmetrical and balanced, with clear, well-defined lines suitable for coloring.`;
 
@@ -52,16 +52,25 @@ serve(async (req) => {
     
     const image = await hf.textToImage({
       inputs: prompt,
-      model: 'rexoscare/mandala-art-lora'
+      model: 'rexoscare/mandala-art-lora',
+      parameters: {
+        negative_prompt: "blurry, bad quality, text, watermark",
+        num_inference_steps: 30,
+        guidance_scale: 7.5,
+      }
     });
 
     console.log("Image generated successfully");
+
+    if (!image) {
+      throw new Error("Failed to generate image");
+    }
 
     const arrayBuffer = await image.arrayBuffer();
     const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
     const imageUrl = `data:image/png;base64,${base64}`;
 
-    // Update job status
+    // Update job status if jobId is provided
     if (jobId) {
       console.log("Updating job status:", jobId);
       const { error: updateError } = await supabase
@@ -87,10 +96,11 @@ serve(async (req) => {
         }
       }
     );
+
   } catch (error) {
     console.error('Error in edge function:', error);
 
-    // If there's a jobId, update the job status to failed
+    // Update job status to failed if jobId exists
     try {
       const { jobId } = await req.json();
       if (jobId) {
