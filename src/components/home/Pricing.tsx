@@ -80,7 +80,7 @@ export const Pricing = () => {
           <ul className="space-y-4 mb-8">
             <li className="flex items-center">
               <Check className="h-5 w-5 text-green-500 mr-2" />
-              2 free generations
+              10 free generations
             </li>
             <li className="flex items-center">
               <Check className="h-5 w-5 text-green-500 mr-2" />
