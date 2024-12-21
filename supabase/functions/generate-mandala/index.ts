@@ -5,16 +5,23 @@ import { HfInference } from 'https://esm.sh/@huggingface/inference@2.3.2'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Max-Age': '86400',
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { 
+      headers: corsHeaders,
+      status: 204
+    });
   }
 
   try {
+    console.log("Received request");
     const { settings, jobId } = await req.json();
-    console.log("Received request with settings:", settings, "jobId:", jobId);
+    console.log("Request details:", { settings, jobId });
 
     if (!settings || typeof settings !== 'object' || Array.isArray(settings)) {
       throw new Error("Invalid settings provided");
@@ -36,16 +43,20 @@ serve(async (req) => {
 
       console.log("Generated prompt:", prompt);
 
-      const hf = new HfInference(Deno.env.get('HUGGING_FACE_ACCESS_TOKEN'));
-      
-      if (!Deno.env.get('HUGGING_FACE_ACCESS_TOKEN')) {
+      const hfToken = Deno.env.get('HUGGING_FACE_ACCESS_TOKEN');
+      if (!hfToken) {
         throw new Error("Missing HUGGING_FACE_ACCESS_TOKEN");
       }
 
+      const hf = new HfInference(hfToken);
+      console.log("Initializing image generation...");
+      
       const image = await hf.textToImage({
         inputs: prompt,
         model: 'rexoscare/mandala-art-lora'
       });
+
+      console.log("Image generated successfully");
 
       const arrayBuffer = await image.arrayBuffer();
       const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
@@ -53,6 +64,7 @@ serve(async (req) => {
 
       // Update job status
       if (jobId) {
+        console.log("Updating job status:", jobId);
         const { error: updateError } = await supabase
           .from('mandala_jobs')
           .update({ 
@@ -69,13 +81,19 @@ serve(async (req) => {
 
       return new Response(
         JSON.stringify({ output: [imageUrl] }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json'
+          }
+        }
       );
     } catch (hfError) {
-      console.error("Error generating image:", hfError);
+      console.error("Error in image generation:", hfError);
 
       // Update job status on error
       if (jobId) {
+        console.log("Updating job status to failed:", jobId);
         const { error: updateError } = await supabase
           .from('mandala_jobs')
           .update({ 
@@ -86,16 +104,19 @@ serve(async (req) => {
           .eq('id', jobId);
 
         if (updateError) {
-          console.error("Error updating job:", updateError);
+          console.error("Error updating job status:", updateError);
         }
       }
 
       throw hfError;
     }
   } catch (error) {
-    console.error('Error:', error);
+    console.error('Error in edge function:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        details: 'Error occurred while processing the request'
+      }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
