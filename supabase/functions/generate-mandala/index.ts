@@ -13,7 +13,7 @@ serve(async (req) => {
 
   try {
     const { settings, predictionId } = await req.json();
-    console.log("Received request:", { settings, predictionId });
+    console.log("Received request with settings:", settings);
     
     // Handle status check requests
     if (predictionId) {
@@ -25,7 +25,7 @@ serve(async (req) => {
       });
 
       const prediction = await response.json();
-      console.log("Prediction status:", prediction.status);
+      console.log("Prediction status check response:", prediction);
 
       return new Response(
         JSON.stringify(prediction),
@@ -34,12 +34,10 @@ serve(async (req) => {
     }
 
     // Validate settings
-    if (!settings || typeof settings !== 'object' || Object.keys(settings).length === 0) {
-      console.error("Invalid settings object received:", settings);
+    if (!settings || typeof settings !== 'object') {
+      console.error("Invalid settings object:", settings);
       return new Response(
-        JSON.stringify({ 
-          error: "Settings object is required and must be a valid object with at least one property" 
-        }),
+        JSON.stringify({ error: "Settings object is required and must be a valid object" }),
         { 
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -47,7 +45,24 @@ serve(async (req) => {
       );
     }
 
-    const prompt = generateEnhancedPrompt(settings);
+    // Ensure settings has required properties
+    const defaultSettings = {
+      emotions: "balanced",
+      spiritualSymbols: "geometric",
+      emotionalIntensity: "5",
+      emotionalQuality: "harmonious",
+      energyLevel: "Medium (balanced, regular patterns)",
+      bodyTension: "Center (influences core design)",
+      thoughtPattern: "Creative (organic, flowing patterns)",
+      detailLevel: "Moderately detailed (balanced complexity)",
+      spiritualIntention: "Inner peace",
+      naturalElements: "Earth (solid, grounding patterns)",
+      timeOfDay: "Noon (bold, clear patterns)"
+    };
+
+    // Merge default settings with provided settings
+    const finalSettings = { ...defaultSettings, ...settings };
+    const prompt = generateEnhancedPrompt(finalSettings);
     console.log("Generated prompt:", prompt);
 
     const response = await fetch("https://api.replicate.com/v1/predictions", {
@@ -104,22 +119,22 @@ serve(async (req) => {
 function generateEnhancedPrompt(settings: any) {
   const basePrompt = "Create a line art mandala in black and white with the following characteristics:";
   
-  // Safely handle array values and provide defaults
-  const emotions = Array.isArray(settings.emotions) ? settings.emotions.join(", ") : settings.emotions || "balanced";
-  const symbols = Array.isArray(settings.spiritualSymbols) ? settings.spiritualSymbols.join(", ") : settings.spiritualSymbols || "geometric";
+  // Safely handle array values
+  const emotions = Array.isArray(settings.emotions) ? settings.emotions.join(", ") : settings.emotions;
+  const symbols = Array.isArray(settings.spiritualSymbols) ? settings.spiritualSymbols.join(", ") : settings.spiritualSymbols;
   
   const prompt = `${basePrompt}
     Emotions: ${emotions}
-    Intensity: ${settings.emotionalIntensity || "5"}
-    Quality: ${settings.emotionalQuality || "harmonious"}
-    Energy: ${settings.energyLevel || "Medium (balanced, regular patterns)"}
-    Tension: ${settings.bodyTension || "Center (influences core design)"}
-    Thought Pattern: ${settings.thoughtPattern || "Creative (organic, flowing patterns)"}
-    Detail Level: ${settings.detailLevel || "Moderately detailed (balanced complexity)"}
+    Intensity: ${settings.emotionalIntensity}
+    Quality: ${settings.emotionalQuality}
+    Energy: ${settings.energyLevel}
+    Tension: ${settings.bodyTension}
+    Thought Pattern: ${settings.thoughtPattern}
+    Detail Level: ${settings.detailLevel}
     Spiritual Symbols: ${symbols}
-    Intention: ${settings.spiritualIntention || "Inner peace"}
-    Natural Elements: ${settings.naturalElements || "Earth (solid, grounding patterns)"}
-    Time of Day: ${settings.timeOfDay || "Noon (bold, clear patterns)"}
+    Intention: ${settings.spiritualIntention}
+    Natural Elements: ${settings.naturalElements}
+    Time of Day: ${settings.timeOfDay}
     Make it suitable for coloring with clear, well-defined lines.
     Negative prompt: shadows, gradient`;
 
