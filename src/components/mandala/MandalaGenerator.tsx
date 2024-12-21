@@ -15,15 +15,25 @@ export const useMandalaGenerator = ({ answers }: MandalaGeneratorProps) => {
     try {
       setIsGenerating(true);
       
-      // Ensure we have valid settings
-      if (!answers || typeof answers !== 'object' || Object.keys(answers).length === 0) {
+      // Enhanced validation of settings
+      if (!answers || typeof answers !== 'object') {
+        throw new Error("Invalid settings format");
+      }
+
+      const validAnswers = Object.fromEntries(
+        Object.entries(answers).filter(([_, value]) => 
+          value !== undefined && value !== null && value !== ''
+        )
+      );
+
+      if (Object.keys(validAnswers).length === 0) {
         throw new Error("Please provide at least one answer to generate a mandala");
       }
       
-      console.log("Generating mandala with settings:", answers);
+      console.log("Generating mandala with settings:", validAnswers);
 
       const { data: initialData, error: initialError } = await supabase.functions.invoke('generate-mandala', {
-        body: { settings: answers }
+        body: { settings: validAnswers }
       });
 
       if (initialError) {

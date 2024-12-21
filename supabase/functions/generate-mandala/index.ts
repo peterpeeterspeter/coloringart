@@ -13,7 +13,7 @@ serve(async (req) => {
 
   try {
     const { settings, predictionId } = await req.json();
-    console.log("Received request with:", { settings, predictionId });
+    console.log("Received request:", { settings, predictionId });
     
     // Handle status check requests
     if (predictionId) {
@@ -25,7 +25,7 @@ serve(async (req) => {
       });
 
       const prediction = await response.json();
-      console.log("Prediction status check response:", prediction);
+      console.log("Prediction status:", prediction.status);
 
       return new Response(
         JSON.stringify(prediction),
@@ -33,11 +33,11 @@ serve(async (req) => {
       );
     }
 
-    // Validate settings
-    if (!settings || typeof settings !== 'object' || Object.keys(settings).length === 0) {
-      console.error("Invalid settings received:", settings);
+    // Enhanced settings validation
+    if (!settings || typeof settings !== 'object') {
+      console.error("Invalid settings format:", settings);
       return new Response(
-        JSON.stringify({ error: "Settings object is required and must be a valid object with at least one property" }),
+        JSON.stringify({ error: "Settings must be a valid object" }),
         { 
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -45,7 +45,24 @@ serve(async (req) => {
       );
     }
 
-    const prompt = generateEnhancedPrompt(settings);
+    const validSettings = Object.fromEntries(
+      Object.entries(settings).filter(([_, value]) => 
+        value !== undefined && value !== null && value !== ''
+      )
+    );
+
+    if (Object.keys(validSettings).length === 0) {
+      console.error("No valid settings found:", settings);
+      return new Response(
+        JSON.stringify({ error: "At least one valid setting is required" }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    const prompt = generateEnhancedPrompt(validSettings);
     console.log("Generated prompt:", prompt);
 
     const response = await fetch("https://api.replicate.com/v1/predictions", {
