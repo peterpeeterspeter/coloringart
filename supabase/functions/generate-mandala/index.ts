@@ -9,15 +9,15 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { 
-      status: 204,
-      headers: corsHeaders 
-    });
-  }
-
   try {
+    // Handle CORS preflight requests
+    if (req.method === 'OPTIONS') {
+      return new Response(null, { 
+        status: 204,
+        headers: corsHeaders 
+      });
+    }
+
     console.log("Received request");
     const { settings, jobId } = await req.json();
     console.log("Request details:", { settings, jobId });
@@ -44,12 +44,14 @@ serve(async (req) => {
 
     const hfToken = Deno.env.get('HUGGING_FACE_ACCESS_TOKEN');
     if (!hfToken) {
-      throw new Error("Missing HUGGING_FACE_ACCESS_TOKEN");
+      console.error("Missing HUGGING_FACE_ACCESS_TOKEN");
+      throw new Error("Configuration error: Missing API token");
     }
 
+    console.log("Initializing Hugging Face client...");
     const hf = new HfInference(hfToken);
-    console.log("Initializing image generation...");
     
+    console.log("Starting image generation with prompt...");
     const image = await hf.textToImage({
       inputs: prompt,
       model: 'rexoscare/mandala-art-lora',
@@ -60,9 +62,10 @@ serve(async (req) => {
       }
     });
 
-    console.log("Image generated successfully");
+    console.log("Image generation completed");
 
     if (!image) {
+      console.error("No image generated");
       throw new Error("Failed to generate image");
     }
 
@@ -102,7 +105,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in edge function:', error);
-
+    
     // Update job status to failed if jobId exists
     try {
       const { jobId } = await req.json();
@@ -116,7 +119,7 @@ serve(async (req) => {
           .from('mandala_jobs')
           .update({ 
             status: 'failed',
-            error: error.message,
+            error: error.message || 'Unknown error occurred',
             completed_at: new Date().toISOString()
           })
           .eq('id', jobId);
@@ -128,8 +131,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false,
-        error: error.message,
-        details: 'Error occurred while processing the request'
+        error: error.message || 'Unknown error occurred',
+        details: error.stack || 'Error occurred while processing the request'
       }),
       { 
         status: 500,
