@@ -34,10 +34,10 @@ serve(async (req) => {
     }
 
     // Validate settings
-    if (!settings || typeof settings !== 'object' || Array.isArray(settings) || Object.keys(settings).length === 0) {
+    if (!settings || typeof settings !== 'object' || Array.isArray(settings)) {
       console.error("Invalid settings:", settings);
       return new Response(
-        JSON.stringify({ error: "Settings must be a valid object with at least one property" }),
+        JSON.stringify({ error: "Settings must be a valid object" }),
         { 
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -57,7 +57,7 @@ serve(async (req) => {
       body: JSON.stringify({
         version: "1f0f10e3adc3dd30d8c1e962b5a4442e92644025aa620f40efa4c0b95b58e90a",
         input: {
-          prompt: prompt,
+          prompt,
           negative_prompt: "ugly, blurry, low quality, distorted, disfigured, shadows, gradient",
           width: 1024,
           height: 1024,

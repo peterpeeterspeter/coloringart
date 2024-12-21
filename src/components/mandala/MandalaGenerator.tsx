@@ -26,8 +26,9 @@ export const useMandalaGenerator = ({ answers }: MandalaGeneratorProps) => {
         }
       });
 
+      // Add a default value if settings is empty
       if (Object.keys(settings).length === 0) {
-        throw new Error("Please provide at least one answer to generate a mandala");
+        settings.style = "balanced and harmonious";
       }
       
       console.log("Generating mandala with settings:", settings);
