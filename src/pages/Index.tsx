@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Search, Filter, PaintBucket } from "lucide-react";
+import { Search, Filter, PaintBucket, Home } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Hero } from "@/components/home/Hero";
 import { Features } from "@/components/home/Features";
@@ -17,7 +17,8 @@ const Index = () => {
             <img 
               src="/lovable-uploads/05478edb-875e-4a7a-8662-3f2fad9e4121.png" 
               alt="Coloring.art Logo" 
-              className="h-36 md:h-48"
+              className="h-48 md:h-56 cursor-pointer"
+              onClick={() => navigate("/")}
             />
           </div>
           <div className="flex items-center space-x-6">
@@ -27,12 +28,22 @@ const Index = () => {
               <a href="/gallery" className="hover:text-primary transition-colors">Gallery</a>
               <a href="/pricing" className="hover:text-primary transition-colors">Pricing</a>
             </div>
-            <Button
-              onClick={() => navigate("/auth")}
-              className="bg-primary hover:bg-primary/90 text-white"
-            >
-              Sign In
-            </Button>
+            <div className="flex items-center space-x-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate("/")}
+                className="hover:bg-primary/10"
+              >
+                <Home className="h-5 w-5" />
+              </Button>
+              <Button
+                onClick={() => navigate("/auth")}
+                className="bg-primary hover:bg-primary/90 text-white"
+              >
+                Sign In
+              </Button>
+            </div>
           </div>
         </nav>
       </header>
@@ -129,7 +140,7 @@ const faqs = [
   },
   {
     question: "How many free generations do I get?",
-    answer: "New users get 2 free generations to try out both IdeaArtist and SoulScape features before choosing a subscription plan."
+    answer: "New users get 10 free generations to try out both IdeaArtist and SoulScape features before choosing a subscription plan."
   },
   {
     question: "What's included in the premium subscription?",
