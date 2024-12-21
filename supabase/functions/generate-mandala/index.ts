@@ -53,7 +53,6 @@ serve(async (req) => {
       inputs: prompt,
       model: 'rexoscare/mandala-art-lora',
       parameters: {
-        negative_prompt: "blurry, bad quality, text, watermark",
         num_inference_steps: 30,
         guidance_scale: 7.5,
       }
