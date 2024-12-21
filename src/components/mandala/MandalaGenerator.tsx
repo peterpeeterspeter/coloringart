@@ -26,9 +26,10 @@ export const useMandalaGenerator = ({ answers }: MandalaGeneratorProps) => {
         }
       });
 
-      // Add a default value if settings is empty
+      // Ensure we have at least one valid setting
       if (Object.keys(settings).length === 0) {
         settings.style = "balanced and harmonious";
+        settings.theme = "spiritual and meditative";
       }
       
       console.log("Generating mandala with settings:", settings);

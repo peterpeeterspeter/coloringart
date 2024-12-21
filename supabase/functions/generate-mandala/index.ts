@@ -45,6 +45,7 @@ serve(async (req) => {
       );
     }
 
+    // Generate the prompt based on settings
     const prompt = generateEnhancedPrompt(settings);
     console.log("Generated prompt:", prompt);
 
@@ -114,7 +115,9 @@ function generateEnhancedPrompt(settings: Record<string, unknown>) {
     detailLevel: "Moderately detailed (balanced complexity)",
     spiritualIntention: "Inner peace",
     naturalElements: "Earth (solid, grounding patterns)",
-    timeOfDay: "Noon (bold, clear patterns)"
+    timeOfDay: "Noon (bold, clear patterns)",
+    style: "balanced and harmonious",
+    theme: "spiritual and meditative"
   };
 
   // Merge provided settings with defaults
@@ -136,6 +139,8 @@ function generateEnhancedPrompt(settings: Record<string, unknown>) {
     Intention: ${finalSettings.spiritualIntention}
     Natural Elements: ${finalSettings.naturalElements}
     Time of Day: ${finalSettings.timeOfDay}
+    Style: ${finalSettings.style}
+    Theme: ${finalSettings.theme}
     Make it suitable for coloring with clear, well-defined lines.
     Negative prompt: shadows, gradient`;
 
