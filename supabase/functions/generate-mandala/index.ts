@@ -30,6 +30,17 @@ serve(async (req) => {
     console.log("Generated prompt:", prompt);
 
     const hf = new HfInference(Deno.env.get('HUGGING_FACE_ACCESS_TOKEN'));
+    
+    if (!Deno.env.get('HUGGING_FACE_ACCESS_TOKEN')) {
+      console.error("Missing HUGGING_FACE_ACCESS_TOKEN");
+      return new Response(
+        JSON.stringify({ error: "Server configuration error" }),
+        { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
 
     try {
       const image = await hf.textToImage({
@@ -51,7 +62,7 @@ serve(async (req) => {
     } catch (hfError) {
       console.error("Hugging Face API error:", hfError);
       return new Response(
-        JSON.stringify({ error: "Failed to generate image" }),
+        JSON.stringify({ error: "Failed to generate image", details: hfError.message }),
         { 
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -73,18 +84,18 @@ serve(async (req) => {
 function generateEnhancedPrompt(settings: Record<string, unknown>) {
   const basePrompt = "Create a black and white line art mandala with the following characteristics:";
   
-  // Extract questionnaire answers
-  const emotions = Array.isArray(settings.emotions) ? settings.emotions.join(", ") : "";
+  // Extract questionnaire answers with fallbacks
+  const emotions = Array.isArray(settings.emotions) ? settings.emotions.join(", ") : "balanced";
   const intensity = settings.emotionalIntensity || "5";
-  const quality = settings.emotionalQuality || "";
-  const energy = settings.energyLevel || "";
-  const tension = settings.bodyTension || "";
-  const thought = settings.thoughtPattern || "";
-  const detail = settings.detailLevel || "";
-  const symbols = Array.isArray(settings.spiritualSymbols) ? settings.spiritualSymbols.join(", ") : "";
-  const intention = settings.spiritualIntention || "";
-  const elements = settings.naturalElements || "";
-  const timeOfDay = settings.timeOfDay || "";
+  const quality = settings.emotionalQuality || "harmonious";
+  const energy = settings.energyLevel || "Medium (balanced, regular patterns)";
+  const tension = settings.bodyTension || "Center (influences core design)";
+  const thought = settings.thoughtPattern || "Creative (organic, flowing patterns)";
+  const detail = settings.detailLevel || "Moderately detailed";
+  const symbols = Array.isArray(settings.spiritualSymbols) ? settings.spiritualSymbols.join(", ") : "geometric";
+  const intention = settings.spiritualIntention || "Inner peace";
+  const elements = settings.naturalElements || "Earth (solid, grounding patterns)";
+  const timeOfDay = settings.timeOfDay || "Noon (bold, clear patterns)";
 
   // Build a detailed prompt incorporating all questionnaire answers
   const prompt = `${basePrompt}
