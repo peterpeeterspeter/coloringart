@@ -34,7 +34,7 @@ serve(async (req) => {
     }
 
     // Validate settings
-    if (!settings || typeof settings !== 'object') {
+    if (!settings || typeof settings !== 'object' || Object.keys(settings).length === 0) {
       throw new Error("Settings object is required and must be a valid object");
     }
 
@@ -65,6 +65,10 @@ serve(async (req) => {
     const prediction = await response.json();
     console.log("Initial prediction response:", prediction);
 
+    if (prediction.error) {
+      throw new Error(prediction.error);
+    }
+
     return new Response(
       JSON.stringify(prediction),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -84,8 +88,9 @@ serve(async (req) => {
 function generateEnhancedPrompt(settings: any) {
   const basePrompt = "Create a line art mandala in black and white with the following characteristics:";
   
-  const emotions = Array.isArray(settings.emotions) ? settings.emotions.join(", ") : "";
-  const symbols = Array.isArray(settings.spiritualSymbols) ? settings.spiritualSymbols.join(", ") : "";
+  // Safely handle array values
+  const emotions = Array.isArray(settings.emotions) ? settings.emotions.join(", ") : settings.emotions || "";
+  const symbols = Array.isArray(settings.spiritualSymbols) ? settings.spiritualSymbols.join(", ") : settings.spiritualSymbols || "";
   
   const prompt = `${basePrompt}
     Emotions: ${emotions}

@@ -31,6 +31,12 @@ export const MandalaQuestionnaire = () => {
   const generateMandala = async () => {
     try {
       console.log("Generating mandala with settings:", answers);
+      
+      // Ensure answers is a valid object with at least one property
+      if (!answers || typeof answers !== 'object' || Object.keys(answers).length === 0) {
+        throw new Error("Please answer at least one question before generating");
+      }
+
       const { data: initialData, error: initialError } = await supabase.functions.invoke('generate-mandala', {
         body: { settings: answers }
       });
@@ -71,7 +77,7 @@ export const MandalaQuestionnaire = () => {
       console.error("Error generating mandala:", error);
       toast({
         title: "Error",
-        description: "Failed to generate mandala. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to generate mandala. Please try again.",
         variant: "destructive",
       });
       throw error;
@@ -167,7 +173,7 @@ export const MandalaQuestionnaire = () => {
       console.error("Error creating mandala:", error);
       toast({
         title: "Error",
-        description: "Failed to create mandala. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to create mandala. Please try again.",
         variant: "destructive",
       });
     } finally {
