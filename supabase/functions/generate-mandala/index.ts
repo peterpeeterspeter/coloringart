@@ -9,18 +9,17 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  try {
-    // Handle CORS preflight requests
-    if (req.method === 'OPTIONS') {
-      return new Response(null, { 
-        status: 204,
-        headers: corsHeaders 
-      });
-    }
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { 
+      status: 204,
+      headers: corsHeaders 
+    });
+  }
 
-    console.log("Received request");
+  try {
     const { settings, jobId } = await req.json();
-    console.log("Request details:", { settings, jobId });
+    console.log("Request received:", { settings, jobId });
 
     // Input validation
     if (!settings || typeof settings !== 'object') {
@@ -44,14 +43,12 @@ serve(async (req) => {
 
     const hfToken = Deno.env.get('HUGGING_FACE_ACCESS_TOKEN');
     if (!hfToken) {
-      console.error("Missing HUGGING_FACE_ACCESS_TOKEN");
-      throw new Error("Configuration error: Missing API token");
+      throw new Error("HUGGING_FACE_ACCESS_TOKEN not configured");
     }
 
-    console.log("Initializing Hugging Face client...");
     const hf = new HfInference(hfToken);
+    console.log("Starting image generation...");
     
-    console.log("Starting image generation with prompt...");
     const image = await hf.textToImage({
       inputs: prompt,
       model: 'rexoscare/mandala-art-lora',
@@ -62,12 +59,11 @@ serve(async (req) => {
       }
     });
 
-    console.log("Image generation completed");
-
     if (!image) {
-      console.error("No image generated");
-      throw new Error("Failed to generate image");
+      throw new Error("No image generated");
     }
+
+    console.log("Image generation successful");
 
     const arrayBuffer = await image.arrayBuffer();
     const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
@@ -75,7 +71,6 @@ serve(async (req) => {
 
     // Update job status if jobId is provided
     if (jobId) {
-      console.log("Updating job status:", jobId);
       const { error: updateError } = await supabase
         .from('mandala_jobs')
         .update({ 
@@ -104,25 +99,26 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error in edge function:', error);
+    console.error('Edge function error:', error);
     
-    // Update job status to failed if jobId exists
     try {
-      const { jobId } = await req.json();
-      if (jobId) {
-        const supabase = createClient(
-          Deno.env.get('SUPABASE_URL') ?? '',
-          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-        );
+      if (error instanceof Error) {
+        const { jobId } = await req.json();
+        if (jobId) {
+          const supabase = createClient(
+            Deno.env.get('SUPABASE_URL') ?? '',
+            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+          );
 
-        await supabase
-          .from('mandala_jobs')
-          .update({ 
-            status: 'failed',
-            error: error.message || 'Unknown error occurred',
-            completed_at: new Date().toISOString()
-          })
-          .eq('id', jobId);
+          await supabase
+            .from('mandala_jobs')
+            .update({ 
+              status: 'failed',
+              error: error.message,
+              completed_at: new Date().toISOString()
+            })
+            .eq('id', jobId);
+        }
       }
     } catch (updateError) {
       console.error('Error updating job status:', updateError);
@@ -131,8 +127,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false,
-        error: error.message || 'Unknown error occurred',
-        details: error.stack || 'Error occurred while processing the request'
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+        details: error instanceof Error ? error.stack : 'Error details not available'
       }),
       { 
         status: 500,
