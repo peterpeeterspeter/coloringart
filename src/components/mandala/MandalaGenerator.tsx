@@ -2,6 +2,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { MandalaAnswers } from "@/types/mandala";
+import { useSession } from "@supabase/auth-helpers-react";
 
 interface MandalaGeneratorProps {
   answers: MandalaAnswers;
@@ -10,6 +11,7 @@ interface MandalaGeneratorProps {
 export const useMandalaGenerator = ({ answers }: MandalaGeneratorProps) => {
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const session = useSession();
 
   const generateMandala = async () => {
     try {
@@ -34,12 +36,13 @@ export const useMandalaGenerator = ({ answers }: MandalaGeneratorProps) => {
       
       console.log("Creating mandala job with settings:", settings);
 
-      // Create a job record
+      // Create a job record with user_id
       const { data: job, error: jobError } = await supabase
         .from('mandala_jobs')
         .insert({
           status: 'processing',
-          settings
+          settings,
+          user_id: session?.user?.id // Add the user_id here
         })
         .select()
         .single();
