@@ -1,10 +1,4 @@
 project_id = "daeabxmadmvmgirzfmbe"
 
-[create-checkout]
-verify_jwt = true
-
-[check-subscription]
-verify_jwt = true
-
-[generate-mandala]
+[functions.generate-mandala]
 verify_jwt = true

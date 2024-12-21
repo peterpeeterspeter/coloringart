@@ -4,16 +4,16 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { 
-      headers: corsHeaders,
-      status: 204
+      status: 204,
+      headers: corsHeaders 
     });
   }
 
@@ -22,7 +22,7 @@ serve(async (req) => {
     const { settings, jobId } = await req.json();
     console.log("Request details:", { settings, jobId });
 
-    // Validate inputs
+    // Input validation
     if (!settings || typeof settings !== 'object') {
       throw new Error("Invalid settings provided");
     }
@@ -88,7 +88,10 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ output: [imageUrl] }),
+      JSON.stringify({ 
+        success: true,
+        output: [imageUrl] 
+      }),
       { 
         headers: { 
           ...corsHeaders, 
@@ -124,12 +127,16 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({ 
+        success: false,
         error: error.message,
         details: 'Error occurred while processing the request'
       }),
       { 
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json'
+        }
       }
     );
   }
