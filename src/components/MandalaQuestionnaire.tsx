@@ -30,12 +30,20 @@ export const MandalaQuestionnaire = () => {
 
   const generateMandala = async () => {
     try {
+      console.log("Generating mandala with settings:", answers);
       const { data: initialData, error: initialError } = await supabase.functions.invoke('generate-mandala', {
         body: { settings: answers }
       });
 
-      if (initialError) throw initialError;
+      if (initialError) {
+        console.error("Initial error:", initialError);
+        throw initialError;
+      }
       console.log("Initial response:", initialData);
+
+      if (initialData.error) {
+        throw new Error(initialData.error);
+      }
 
       const checkResult = async (predictionId: string): Promise<string> => {
         const { data: statusData, error: statusError } = await supabase.functions.invoke('generate-mandala', {
@@ -127,6 +135,16 @@ export const MandalaQuestionnaire = () => {
     try {
       const imageUrl = await generateMandala();
       
+      if (!session?.user?.id) {
+        setGeneratedImage(imageUrl);
+        setIsSuccess(true);
+        toast({
+          title: "Success!",
+          description: "Your mandala has been created",
+        });
+        return;
+      }
+
       const { error } = await supabase.from("mandalas").insert({
         name,
         description,

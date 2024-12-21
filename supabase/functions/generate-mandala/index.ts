@@ -31,6 +31,10 @@ serve(async (req) => {
       )
     }
 
+    if (!settings || typeof settings !== 'object') {
+      throw new Error("Settings object is required and must be a valid object");
+    }
+
     const prompt = generateMandalaPrompt(settings)
     console.log("Generated prompt:", prompt)
 
@@ -77,6 +81,11 @@ serve(async (req) => {
 function generateMandalaPrompt(settings: any) {
   if (!settings) {
     throw new Error("Settings object is required");
+  }
+
+  // Handle both direct prompt and structured settings
+  if (settings.prompt) {
+    return settings.prompt;
   }
 
   const emotions = Array.isArray(settings.emotions) ? settings.emotions.join(", ") : (settings.emotions || "balanced");
