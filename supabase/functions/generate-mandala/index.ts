@@ -17,14 +17,7 @@ serve(async (req) => {
     console.log("Received request with settings:", settings, "jobId:", jobId);
 
     if (!settings || typeof settings !== 'object' || Array.isArray(settings)) {
-      console.error("Invalid settings:", settings);
-      return new Response(
-        JSON.stringify({ error: "Settings must be a valid object" }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      throw new Error("Invalid settings provided");
     }
 
     const supabase = createClient(
@@ -33,7 +26,14 @@ serve(async (req) => {
     );
 
     try {
-      const prompt = generateEnhancedPrompt(settings);
+      // Simplified prompt generation
+      const prompt = `Create a black and white line art mandala design with the following characteristics: ${
+        Object.entries(settings)
+          .filter(([_, value]) => value) // Filter out empty values
+          .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
+          .join('. ')
+      }. Make it symmetrical and balanced, with clear, well-defined lines suitable for coloring.`;
+
       console.log("Generated prompt:", prompt);
 
       const hf = new HfInference(Deno.env.get('HUGGING_FACE_ACCESS_TOKEN'));
@@ -103,38 +103,3 @@ serve(async (req) => {
     );
   }
 });
-
-function generateEnhancedPrompt(settings: Record<string, unknown>) {
-  const basePrompt = "Create a black and white line art mandala with the following characteristics:";
-  
-  // Extract questionnaire answers with fallbacks
-  const emotions = Array.isArray(settings.emotions) ? settings.emotions.join(", ") : "balanced";
-  const intensity = settings.emotionalIntensity || "5";
-  const quality = settings.emotionalQuality || "harmonious";
-  const energy = settings.energyLevel || "Medium (balanced, regular patterns)";
-  const tension = settings.bodyTension || "Center (influences core design)";
-  const thought = settings.thoughtPattern || "Creative (organic, flowing patterns)";
-  const detail = settings.detailLevel || "Moderately detailed";
-  const symbols = Array.isArray(settings.spiritualSymbols) ? settings.spiritualSymbols.join(", ") : "geometric";
-  const intention = settings.spiritualIntention || "Inner peace";
-  const elements = settings.naturalElements || "Earth (solid, grounding patterns)";
-  const timeOfDay = settings.timeOfDay || "Noon (bold, clear patterns)";
-
-  // Build a detailed prompt incorporating all questionnaire answers
-  const prompt = `${basePrompt}
-    A ${detail.toLowerCase()} mandala design expressing ${emotions} emotions at intensity level ${intensity},
-    embodying ${quality} qualities.
-    The design should reflect ${energy.toLowerCase()} energy patterns,
-    with emphasis on ${tension.toLowerCase()}.
-    Incorporate a ${thought.toLowerCase()} style,
-    featuring ${symbols.toLowerCase()} symbols.
-    The intention is ${intention.toLowerCase()},
-    drawing inspiration from ${elements.toLowerCase()}
-    and the essence of ${timeOfDay.toLowerCase()}.
-    Create this as a pure black and white line art suitable for coloring,
-    with clear, well-defined lines and intricate patterns.
-    Make it symmetrical and balanced, with no color, shadows, or gradients.`;
-
-  console.log("Final prompt:", prompt);
-  return prompt;
-}
