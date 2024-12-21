@@ -32,10 +32,25 @@ export const useMandalaGenerator = ({ answers }: MandalaGeneratorProps) => {
         settings.theme = "spiritual and meditative";
       }
       
-      console.log("Generating mandala with settings:", settings);
+      console.log("Creating mandala job with settings:", settings);
 
+      // Create a job record
+      const { data: job, error: jobError } = await supabase
+        .from('mandala_jobs')
+        .insert({
+          status: 'processing',
+          settings
+        })
+        .select()
+        .single();
+
+      if (jobError) {
+        throw jobError;
+      }
+
+      // Generate the mandala
       const { data, error } = await supabase.functions.invoke('generate-mandala', {
-        body: { settings }
+        body: { settings, jobId: job.id }
       });
 
       if (error) {

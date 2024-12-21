@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 import { HfInference } from 'https://esm.sh/@huggingface/inference@2.3.2'
 
 const corsHeaders = {
@@ -12,8 +13,8 @@ serve(async (req) => {
   }
 
   try {
-    const { settings } = await req.json();
-    console.log("Received request with settings:", settings);
+    const { settings, jobId } = await req.json();
+    console.log("Received request with settings:", settings, "jobId:", jobId);
 
     if (!settings || typeof settings !== 'object' || Array.isArray(settings)) {
       console.error("Invalid settings:", settings);
@@ -26,23 +27,21 @@ serve(async (req) => {
       );
     }
 
-    const prompt = generateEnhancedPrompt(settings);
-    console.log("Generated prompt:", prompt);
-
-    const hf = new HfInference(Deno.env.get('HUGGING_FACE_ACCESS_TOKEN'));
-    
-    if (!Deno.env.get('HUGGING_FACE_ACCESS_TOKEN')) {
-      console.error("Missing HUGGING_FACE_ACCESS_TOKEN");
-      return new Response(
-        JSON.stringify({ error: "Server configuration error" }),
-        { 
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
     try {
+      const prompt = generateEnhancedPrompt(settings);
+      console.log("Generated prompt:", prompt);
+
+      const hf = new HfInference(Deno.env.get('HUGGING_FACE_ACCESS_TOKEN'));
+      
+      if (!Deno.env.get('HUGGING_FACE_ACCESS_TOKEN')) {
+        throw new Error("Missing HUGGING_FACE_ACCESS_TOKEN");
+      }
+
       const image = await hf.textToImage({
         inputs: prompt,
         model: 'rexoscare/mandala-art-lora',
@@ -55,26 +54,53 @@ serve(async (req) => {
       const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
       const imageUrl = `data:image/png;base64,${base64}`;
 
+      // Update job status
+      if (jobId) {
+        const { error: updateError } = await supabase
+          .from('mandala_jobs')
+          .update({ 
+            status: 'completed',
+            image_url: imageUrl,
+            completed_at: new Date().toISOString()
+          })
+          .eq('id', jobId);
+
+        if (updateError) {
+          console.error("Error updating job:", updateError);
+        }
+      }
+
       return new Response(
         JSON.stringify({ output: [imageUrl] }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     } catch (hfError) {
-      console.error("Hugging Face API error:", hfError);
-      return new Response(
-        JSON.stringify({ error: "Failed to generate image", details: hfError.message }),
-        { 
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      console.error("Error generating image:", hfError);
+
+      // Update job status on error
+      if (jobId) {
+        const { error: updateError } = await supabase
+          .from('mandala_jobs')
+          .update({ 
+            status: 'failed',
+            error: hfError.message,
+            completed_at: new Date().toISOString()
+          })
+          .eq('id', jobId);
+
+        if (updateError) {
+          console.error("Error updating job:", updateError);
         }
-      );
+      }
+
+      throw hfError;
     }
   } catch (error) {
     console.error("Error:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
-        status: 400,
+        status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
