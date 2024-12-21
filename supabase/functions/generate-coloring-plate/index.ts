@@ -7,7 +7,6 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -16,7 +15,6 @@ serve(async (req) => {
     const { settings, predictionId } = await req.json()
     console.log("Received request:", { settings, predictionId })
     
-    // If predictionId is provided, check the status
     if (predictionId) {
       const response = await fetch(`https://api.replicate.com/v1/predictions/${predictionId}`, {
         headers: {
@@ -36,7 +34,6 @@ serve(async (req) => {
       })
     }
 
-    // Create a new prediction
     const response = await fetch("https://api.replicate.com/v1/predictions", {
       method: "POST",
       headers: {
@@ -46,8 +43,8 @@ serve(async (req) => {
       body: JSON.stringify({
         version: "c221b2b8ef527988fb59bf24a8b97c4561f1c671f73bd389f866bfb27c061316",
         input: {
-          prompt: settings.prompt,
-          negative_prompt: "blurry, bad, text, watermark, signature, color, photorealistic",
+          prompt: `Create a line art coloring page in black and white of: ${settings.prompt}. Make it suitable for coloring with clear, well-defined lines. Style: line art, black and white`,
+          negative_prompt: "blurry, bad, text, watermark, signature, color, photorealistic, shadows, gradient",
           num_outputs: 1,
           width: 768,
           height: 768,

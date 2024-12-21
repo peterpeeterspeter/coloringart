@@ -7,7 +7,6 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
@@ -16,7 +15,6 @@ serve(async (req) => {
     const { settings, predictionId } = await req.json()
     console.log("Received request with settings:", settings);
     
-    // If predictionId is provided, check the status
     if (predictionId) {
       const response = await fetch(`https://api.replicate.com/v1/predictions/${predictionId}`, {
         headers: {
@@ -36,7 +34,6 @@ serve(async (req) => {
       })
     }
 
-    // Otherwise, create a new prediction
     const prompt = generateMandalaPrompt(settings)
     console.log("Generated prompt:", prompt)
 
@@ -47,10 +44,10 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        version: "39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
+        version: "1f0f10e3adc3dd30d8c1e962b5a4442e92644025aa620f40efa4c0b95b58e90a", // codingdudecom/sdxl-mandala model
         input: {
           prompt: prompt,
-          negative_prompt: "ugly, blurry, low quality, distorted, disfigured",
+          negative_prompt: "ugly, blurry, low quality, distorted, disfigured, shadows, gradient",
           width: 1024,
           height: 1024,
           num_outputs: 1,
@@ -90,24 +87,19 @@ function generateMandalaPrompt(settings: any): string {
     throw new Error("Settings object is required");
   }
 
-  // Extract emotional elements with default values
   const emotions = Array.isArray(settings.emotions) ? settings.emotions.join(", ") : (settings.emotions || "balanced");
   const intensity = settings.emotionalIntensity || "5";
   const quality = settings.emotionalQuality || "Balance";
-  
-  // Physical and mental aspects
   const energy = settings.energyLevel || "Medium (balanced, regular patterns)";
   const tension = settings.bodyTension || "Center (influences core design)";
   const thoughtPattern = settings.thoughtPattern || "Creative (organic, flowing patterns)";
   const detailLevel = settings.detailLevel || "Moderately detailed (balanced complexity)";
-  
-  // Spiritual and environmental elements
   const symbols = Array.isArray(settings.spiritualSymbols) ? settings.spiritualSymbols.join(", ") : (settings.spiritualSymbols || "Geometric shapes");
   const intention = settings.spiritualIntention || "Inner peace";
   const naturalElement = settings.naturalElements || "Earth (solid, grounding patterns)";
   const timeOfDay = settings.timeOfDay || "Noon (bold, clear patterns)";
 
-  return `Create a beautiful and intricate mandala design with the following characteristics:
+  return `Create a beautiful and intricate mandala line art design in black and white with the following characteristics:
     - Emotional essence: ${emotions} with ${intensity}/10 intensity
     - Emotional quality: ${quality}
     - Energy level: ${energy}
@@ -119,5 +111,5 @@ function generateMandalaPrompt(settings: any): string {
     - Natural elements: ${naturalElement}
     - Time influence: ${timeOfDay}
     
-    The mandala should be perfectly symmetrical, centered, and incorporate these elements into a harmonious spiritual artwork using sacred geometry.`.replace(/\n\s+/g, ' ');
+    The mandala should be perfectly symmetrical, centered, and incorporate these elements into a harmonious spiritual artwork using sacred geometry. Style: line art, black and white`.replace(/\n\s+/g, ' ');
 }
