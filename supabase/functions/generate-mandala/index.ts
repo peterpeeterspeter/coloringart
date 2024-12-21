@@ -7,7 +7,6 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -16,7 +15,6 @@ serve(async (req) => {
     const { settings } = await req.json();
     console.log("Received request with settings:", settings);
 
-    // Validate settings
     if (!settings || typeof settings !== 'object' || Array.isArray(settings)) {
       console.error("Invalid settings:", settings);
       return new Response(
@@ -42,7 +40,6 @@ serve(async (req) => {
         }
       });
 
-      // Convert the blob to a base64 string
       const arrayBuffer = await image.arrayBuffer();
       const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
       const imageUrl = `data:image/png;base64,${base64}`;
@@ -76,46 +73,34 @@ serve(async (req) => {
 function generateEnhancedPrompt(settings: Record<string, unknown>) {
   const basePrompt = "Create a black and white line art mandala with the following characteristics:";
   
-  // Default settings if any are missing
-  const defaultSettings = {
-    emotions: "balanced",
-    spiritualSymbols: "geometric",
-    emotionalIntensity: "5",
-    emotionalQuality: "harmonious",
-    energyLevel: "Medium (balanced, regular patterns)",
-    bodyTension: "Center (influences core design)",
-    thoughtPattern: "Creative (organic, flowing patterns)",
-    detailLevel: "Moderately detailed (balanced complexity)",
-    spiritualIntention: "Inner peace",
-    naturalElements: "Earth (solid, grounding patterns)",
-    timeOfDay: "Noon (bold, clear patterns)",
-    style: "balanced and harmonious",
-    theme: "spiritual and meditative"
-  };
+  // Extract questionnaire answers
+  const emotions = Array.isArray(settings.emotions) ? settings.emotions.join(", ") : "";
+  const intensity = settings.emotionalIntensity || "5";
+  const quality = settings.emotionalQuality || "";
+  const energy = settings.energyLevel || "";
+  const tension = settings.bodyTension || "";
+  const thought = settings.thoughtPattern || "";
+  const detail = settings.detailLevel || "";
+  const symbols = Array.isArray(settings.spiritualSymbols) ? settings.spiritualSymbols.join(", ") : "";
+  const intention = settings.spiritualIntention || "";
+  const elements = settings.naturalElements || "";
+  const timeOfDay = settings.timeOfDay || "";
 
-  // Merge provided settings with defaults
-  const finalSettings = { ...defaultSettings, ...settings };
-  
-  // Safely handle array values
-  const emotions = Array.isArray(finalSettings.emotions) ? finalSettings.emotions.join(", ") : finalSettings.emotions;
-  const symbols = Array.isArray(finalSettings.spiritualSymbols) ? finalSettings.spiritualSymbols.join(", ") : finalSettings.spiritualSymbols;
-  
+  // Build a detailed prompt incorporating all questionnaire answers
   const prompt = `${basePrompt}
-    Emotions: ${emotions}
-    Intensity: ${finalSettings.emotionalIntensity}
-    Quality: ${finalSettings.emotionalQuality}
-    Energy: ${finalSettings.energyLevel}
-    Tension: ${finalSettings.bodyTension}
-    Thought Pattern: ${finalSettings.thoughtPattern}
-    Detail Level: ${finalSettings.detailLevel}
-    Spiritual Symbols: ${symbols}
-    Intention: ${finalSettings.spiritualIntention}
-    Natural Elements: ${finalSettings.naturalElements}
-    Time of Day: ${finalSettings.timeOfDay}
-    Style: ${finalSettings.style}
-    Theme: ${finalSettings.theme}
-    Make it suitable for coloring with clear, well-defined lines.
-    Black and white line art only, no shadows or gradients.`;
+    A ${detail.toLowerCase()} mandala design expressing ${emotions} emotions at intensity level ${intensity},
+    embodying ${quality} qualities.
+    The design should reflect ${energy.toLowerCase()} energy patterns,
+    with emphasis on ${tension.toLowerCase()}.
+    Incorporate a ${thought.toLowerCase()} style,
+    featuring ${symbols.toLowerCase()} symbols.
+    The intention is ${intention.toLowerCase()},
+    drawing inspiration from ${elements.toLowerCase()}
+    and the essence of ${timeOfDay.toLowerCase()}.
+    Create this as a pure black and white line art suitable for coloring,
+    with clear, well-defined lines and intricate patterns.
+    Make it symmetrical and balanced, with no color, shadows, or gradients.`;
 
+  console.log("Final prompt:", prompt);
   return prompt;
 }
