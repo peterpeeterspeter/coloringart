@@ -34,22 +34,10 @@ serve(async (req) => {
     }
 
     // Validate settings
-    if (!settings || typeof settings !== 'object' || Array.isArray(settings)) {
+    if (!settings || typeof settings !== 'object' || Array.isArray(settings) || Object.keys(settings).length === 0) {
       console.error("Invalid settings:", settings);
       return new Response(
-        JSON.stringify({ error: "Settings must be a valid object" }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
-
-    // Ensure settings has at least one property
-    if (Object.keys(settings).length === 0) {
-      console.error("Empty settings object");
-      return new Response(
-        JSON.stringify({ error: "Settings object must contain at least one property" }),
+        JSON.stringify({ error: "Settings must be a valid object with at least one property" }),
         { 
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -111,7 +99,7 @@ serve(async (req) => {
   }
 });
 
-function generateEnhancedPrompt(settings: any) {
+function generateEnhancedPrompt(settings: Record<string, unknown>) {
   const basePrompt = "Create a line art mandala in black and white with the following characteristics:";
   
   // Default settings if any are missing
