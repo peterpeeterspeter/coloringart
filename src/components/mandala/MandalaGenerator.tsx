@@ -16,8 +16,24 @@ export const useMandalaGenerator = ({ answers }: MandalaGeneratorProps) => {
       setIsGenerating(true);
       console.log("Generating mandala with settings:", answers);
       
+      // Set default values for required fields if they're missing
+      const settings = {
+        emotions: "balanced",
+        spiritualSymbols: "geometric",
+        emotionalIntensity: "5",
+        emotionalQuality: "harmonious",
+        energyLevel: "Medium (balanced, regular patterns)",
+        bodyTension: "Center (influences core design)",
+        thoughtPattern: "Creative (organic, flowing patterns)",
+        detailLevel: "Moderately detailed (balanced complexity)",
+        spiritualIntention: "Inner peace",
+        naturalElements: "Earth (solid, grounding patterns)",
+        timeOfDay: "Noon (bold, clear patterns)",
+        ...answers
+      };
+
       const { data: initialData, error: initialError } = await supabase.functions.invoke('generate-mandala', {
-        body: { settings: answers }
+        body: { settings }
       });
 
       if (initialError) {

@@ -34,9 +34,12 @@ serve(async (req) => {
     }
 
     // Validate settings
-    if (!settings || typeof settings !== 'object') {
+    if (!settings || typeof settings !== 'object' || Object.keys(settings).length === 0) {
+      console.error("Invalid settings object received:", settings);
       return new Response(
-        JSON.stringify({ error: "Settings object is required and must be a valid object" }),
+        JSON.stringify({ 
+          error: "Settings object is required and must be a valid object with at least one property" 
+        }),
         { 
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -71,6 +74,17 @@ serve(async (req) => {
     const prediction = await response.json();
     console.log("Initial prediction response:", prediction);
 
+    if (prediction.error) {
+      console.error("Prediction error:", prediction.error);
+      return new Response(
+        JSON.stringify({ error: prediction.error }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
     return new Response(
       JSON.stringify(prediction),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -96,16 +110,16 @@ function generateEnhancedPrompt(settings: any) {
   
   const prompt = `${basePrompt}
     Emotions: ${emotions}
-    Intensity: ${settings.emotionalIntensity || "balanced"}
+    Intensity: ${settings.emotionalIntensity || "5"}
     Quality: ${settings.emotionalQuality || "harmonious"}
-    Energy: ${settings.energyLevel || "balanced"}
-    Tension: ${settings.bodyTension || "relaxed"}
-    Thought Pattern: ${settings.thoughtPattern || "flowing"}
-    Detail Level: ${settings.detailLevel || "moderate"}
+    Energy: ${settings.energyLevel || "Medium (balanced, regular patterns)"}
+    Tension: ${settings.bodyTension || "Center (influences core design)"}
+    Thought Pattern: ${settings.thoughtPattern || "Creative (organic, flowing patterns)"}
+    Detail Level: ${settings.detailLevel || "Moderately detailed (balanced complexity)"}
     Spiritual Symbols: ${symbols}
-    Intention: ${settings.spiritualIntention || "peace"}
-    Natural Elements: ${settings.naturalElements || "balanced"}
-    Time of Day: ${settings.timeOfDay || "daylight"}
+    Intention: ${settings.spiritualIntention || "Inner peace"}
+    Natural Elements: ${settings.naturalElements || "Earth (solid, grounding patterns)"}
+    Time of Day: ${settings.timeOfDay || "Noon (bold, clear patterns)"}
     Make it suitable for coloring with clear, well-defined lines.
     Negative prompt: shadows, gradient`;
 
