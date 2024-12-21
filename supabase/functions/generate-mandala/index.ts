@@ -33,9 +33,9 @@ serve(async (req) => {
       );
     }
 
-    // Basic settings validation
-    if (!settings || typeof settings !== 'object') {
-      console.error("Invalid settings object:", settings);
+    // Validate settings
+    if (!settings || typeof settings !== 'object' || Object.keys(settings).length === 0) {
+      console.error("Invalid settings:", settings);
       return new Response(
         JSON.stringify({ error: "Settings object is required and must be a valid object" }),
         { 
@@ -45,24 +45,7 @@ serve(async (req) => {
       );
     }
 
-    // Default settings
-    const defaultSettings = {
-      emotions: "balanced",
-      spiritualSymbols: "geometric",
-      emotionalIntensity: "5",
-      emotionalQuality: "harmonious",
-      energyLevel: "Medium (balanced, regular patterns)",
-      bodyTension: "Center (influences core design)",
-      thoughtPattern: "Creative (organic, flowing patterns)",
-      detailLevel: "Moderately detailed (balanced complexity)",
-      spiritualIntention: "Inner peace",
-      naturalElements: "Earth (solid, grounding patterns)",
-      timeOfDay: "Noon (bold, clear patterns)"
-    };
-
-    // Merge default settings with provided settings
-    const finalSettings = { ...defaultSettings, ...settings };
-    const prompt = generateEnhancedPrompt(finalSettings);
+    const prompt = generateEnhancedPrompt(settings);
     console.log("Generated prompt:", prompt);
 
     const response = await fetch("https://api.replicate.com/v1/predictions", {
@@ -119,22 +102,40 @@ serve(async (req) => {
 function generateEnhancedPrompt(settings: any) {
   const basePrompt = "Create a line art mandala in black and white with the following characteristics:";
   
+  // Default settings if any are missing
+  const defaultSettings = {
+    emotions: "balanced",
+    spiritualSymbols: "geometric",
+    emotionalIntensity: "5",
+    emotionalQuality: "harmonious",
+    energyLevel: "Medium (balanced, regular patterns)",
+    bodyTension: "Center (influences core design)",
+    thoughtPattern: "Creative (organic, flowing patterns)",
+    detailLevel: "Moderately detailed (balanced complexity)",
+    spiritualIntention: "Inner peace",
+    naturalElements: "Earth (solid, grounding patterns)",
+    timeOfDay: "Noon (bold, clear patterns)"
+  };
+
+  // Merge provided settings with defaults
+  const finalSettings = { ...defaultSettings, ...settings };
+  
   // Safely handle array values
-  const emotions = Array.isArray(settings.emotions) ? settings.emotions.join(", ") : settings.emotions;
-  const symbols = Array.isArray(settings.spiritualSymbols) ? settings.spiritualSymbols.join(", ") : settings.spiritualSymbols;
+  const emotions = Array.isArray(finalSettings.emotions) ? finalSettings.emotions.join(", ") : finalSettings.emotions;
+  const symbols = Array.isArray(finalSettings.spiritualSymbols) ? finalSettings.spiritualSymbols.join(", ") : finalSettings.spiritualSymbols;
   
   const prompt = `${basePrompt}
     Emotions: ${emotions}
-    Intensity: ${settings.emotionalIntensity}
-    Quality: ${settings.emotionalQuality}
-    Energy: ${settings.energyLevel}
-    Tension: ${settings.bodyTension}
-    Thought Pattern: ${settings.thoughtPattern}
-    Detail Level: ${settings.detailLevel}
+    Intensity: ${finalSettings.emotionalIntensity}
+    Quality: ${finalSettings.emotionalQuality}
+    Energy: ${finalSettings.energyLevel}
+    Tension: ${finalSettings.bodyTension}
+    Thought Pattern: ${finalSettings.thoughtPattern}
+    Detail Level: ${finalSettings.detailLevel}
     Spiritual Symbols: ${symbols}
-    Intention: ${settings.spiritualIntention}
-    Natural Elements: ${settings.naturalElements}
-    Time of Day: ${settings.timeOfDay}
+    Intention: ${finalSettings.spiritualIntention}
+    Natural Elements: ${finalSettings.naturalElements}
+    Time of Day: ${finalSettings.timeOfDay}
     Make it suitable for coloring with clear, well-defined lines.
     Negative prompt: shadows, gradient`;
 

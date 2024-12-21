@@ -14,26 +14,16 @@ export const useMandalaGenerator = ({ answers }: MandalaGeneratorProps) => {
   const generateMandala = async () => {
     try {
       setIsGenerating(true);
-      console.log("Generating mandala with settings:", answers);
       
-      // Set default values for required fields if they're missing
-      const settings = {
-        emotions: "balanced",
-        spiritualSymbols: "geometric",
-        emotionalIntensity: "5",
-        emotionalQuality: "harmonious",
-        energyLevel: "Medium (balanced, regular patterns)",
-        bodyTension: "Center (influences core design)",
-        thoughtPattern: "Creative (organic, flowing patterns)",
-        detailLevel: "Moderately detailed (balanced complexity)",
-        spiritualIntention: "Inner peace",
-        naturalElements: "Earth (solid, grounding patterns)",
-        timeOfDay: "Noon (bold, clear patterns)",
-        ...answers
-      };
+      // Ensure we have at least some settings
+      if (!answers || Object.keys(answers).length === 0) {
+        throw new Error("Please provide at least one answer to generate a mandala");
+      }
+      
+      console.log("Generating mandala with settings:", answers);
 
       const { data: initialData, error: initialError } = await supabase.functions.invoke('generate-mandala', {
-        body: { settings }
+        body: { settings: answers }
       });
 
       if (initialError) {
@@ -71,7 +61,7 @@ export const useMandalaGenerator = ({ answers }: MandalaGeneratorProps) => {
 
     } catch (error) {
       console.error("Error generating mandala:", error);
-      toast.error("Failed to generate mandala. Please try again.");
+      toast.error(error instanceof Error ? error.message : "Failed to generate mandala. Please try again.");
       throw error;
     } finally {
       setIsGenerating(false);
