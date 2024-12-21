@@ -30,37 +30,22 @@ export const MandalaQuestionnaire = () => {
 
   const generateMandala = async () => {
     try {
-      console.log("Generating mandala with settings:", answers);
-      
       // Ensure we have at least one answer
       if (!answers || Object.keys(answers).length === 0) {
         throw new Error("Please answer at least one question before generating");
       }
 
-      // Set default values for required fields if they're missing
-      const settings = {
-        emotions: "balanced",
-        spiritualSymbols: "geometric",
-        emotionalIntensity: "5",
-        emotionalQuality: "harmonious",
-        energyLevel: "Medium (balanced, regular patterns)",
-        bodyTension: "Center (influences core design)",
-        thoughtPattern: "Creative (organic, flowing patterns)",
-        detailLevel: "Moderately detailed (balanced complexity)",
-        spiritualIntention: "Inner peace",
-        naturalElements: "Earth (solid, grounding patterns)",
-        timeOfDay: "Noon (bold, clear patterns)",
-        ...answers
-      };
+      console.log("Generating mandala with settings:", answers);
 
       const { data: initialData, error: initialError } = await supabase.functions.invoke('generate-mandala', {
-        body: { settings }
+        body: { settings: answers }
       });
 
       if (initialError) {
         console.error("Initial error:", initialError);
         throw initialError;
       }
+
       console.log("Initial response:", initialData);
 
       if (initialData.error) {

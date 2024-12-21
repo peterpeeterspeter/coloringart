@@ -34,10 +34,10 @@ serve(async (req) => {
     }
 
     // Validate settings
-    if (!settings || typeof settings !== 'object') {
+    if (!settings || typeof settings !== 'object' || Object.keys(settings).length === 0) {
       console.error("Invalid settings object:", settings);
       return new Response(
-        JSON.stringify({ error: "Settings object is required and must be a valid object" }),
+        JSON.stringify({ error: "Settings object is required and must be a valid object with at least one property" }),
         { 
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
