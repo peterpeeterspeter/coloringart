@@ -34,8 +34,8 @@ serve(async (req) => {
     }
 
     // Validate settings
-    if (!settings || typeof settings !== 'object') {
-      console.error("Invalid settings format:", settings);
+    if (!settings || typeof settings !== 'object' || Array.isArray(settings)) {
+      console.error("Invalid settings:", settings);
       return new Response(
         JSON.stringify({ error: "Settings must be a valid object" }),
         { 
@@ -45,10 +45,9 @@ serve(async (req) => {
       );
     }
 
-    // Ensure we have at least one valid setting
-    const settingsKeys = Object.keys(settings);
-    if (settingsKeys.length === 0) {
-      console.error("Empty settings object:", settings);
+    // Ensure settings has at least one property
+    if (Object.keys(settings).length === 0) {
+      console.error("Empty settings object");
       return new Response(
         JSON.stringify({ error: "Settings object must contain at least one property" }),
         { 

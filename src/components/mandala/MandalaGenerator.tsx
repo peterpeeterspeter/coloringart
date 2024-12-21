@@ -15,20 +15,23 @@ export const useMandalaGenerator = ({ answers }: MandalaGeneratorProps) => {
     try {
       setIsGenerating(true);
       
-      // Basic validation
+      // Validate answers object
       if (!answers || typeof answers !== 'object') {
-        throw new Error("Invalid settings format");
+        throw new Error("Invalid answers format");
       }
 
-      // Filter out invalid values and create settings object
-      const settings = Object.fromEntries(
-        Object.entries(answers).filter(([_, value]) => {
-          if (Array.isArray(value)) {
-            return value.length > 0;
+      // Create settings object with only valid values
+      const settings: Record<string, unknown> = {};
+      
+      Object.entries(answers).forEach(([key, value]) => {
+        if (Array.isArray(value)) {
+          if (value.length > 0) {
+            settings[key] = value;
           }
-          return value !== undefined && value !== null && value !== '';
-        })
-      );
+        } else if (value !== undefined && value !== null && value !== '') {
+          settings[key] = value;
+        }
+      });
 
       if (Object.keys(settings).length === 0) {
         throw new Error("Please provide at least one answer to generate a mandala");
