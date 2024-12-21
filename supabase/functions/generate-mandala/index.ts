@@ -44,10 +44,7 @@ serve(async (req) => {
 
       const image = await hf.textToImage({
         inputs: prompt,
-        model: 'rexoscare/mandala-art-lora',
-        parameters: {
-          negative_prompt: "shadows, gradient, color, ugly, blurry, low quality, distorted, disfigured",
-        }
+        model: 'rexoscare/mandala-art-lora'
       });
 
       const arrayBuffer = await image.arrayBuffer();
@@ -96,7 +93,7 @@ serve(async (req) => {
       throw hfError;
     }
   } catch (error) {
-    console.error("Error:", error);
+    console.error('Error:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
