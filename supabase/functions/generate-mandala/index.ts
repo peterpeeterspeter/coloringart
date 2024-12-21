@@ -33,7 +33,7 @@ serve(async (req) => {
       );
     }
 
-    // Enhanced settings validation
+    // Validate settings
     if (!settings || typeof settings !== 'object') {
       console.error("Invalid settings format:", settings);
       return new Response(
@@ -45,16 +45,12 @@ serve(async (req) => {
       );
     }
 
-    const validSettings = Object.fromEntries(
-      Object.entries(settings).filter(([_, value]) => 
-        value !== undefined && value !== null && value !== ''
-      )
-    );
-
-    if (Object.keys(validSettings).length === 0) {
-      console.error("No valid settings found:", settings);
+    // Ensure we have at least one valid setting
+    const settingsKeys = Object.keys(settings);
+    if (settingsKeys.length === 0) {
+      console.error("Empty settings object:", settings);
       return new Response(
-        JSON.stringify({ error: "At least one valid setting is required" }),
+        JSON.stringify({ error: "Settings object must contain at least one property" }),
         { 
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -62,7 +58,7 @@ serve(async (req) => {
       );
     }
 
-    const prompt = generateEnhancedPrompt(validSettings);
+    const prompt = generateEnhancedPrompt(settings);
     console.log("Generated prompt:", prompt);
 
     const response = await fetch("https://api.replicate.com/v1/predictions", {
