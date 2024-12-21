@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { HfInference } from 'https://esm.sh/@huggingface/inference@2.3.2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,24 +15,6 @@ serve(async (req) => {
   try {
     const { settings, predictionId } = await req.json();
     console.log("Received request:", { settings, predictionId });
-    
-    // Handle status check requests
-    if (predictionId) {
-      const response = await fetch(`https://api.replicate.com/v1/predictions/${predictionId}`, {
-        headers: {
-          Authorization: `Token ${Deno.env.get('REPLICATE_API_TOKEN')}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      const prediction = await response.json();
-      console.log("Prediction status:", prediction.status);
-
-      return new Response(
-        JSON.stringify(prediction),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
 
     // Validate settings
     if (!settings || typeof settings !== 'object' || Array.isArray(settings)) {
@@ -49,45 +32,26 @@ serve(async (req) => {
     const prompt = generateEnhancedPrompt(settings);
     console.log("Generated prompt:", prompt);
 
-    const response = await fetch("https://api.replicate.com/v1/predictions", {
-      method: "POST",
-      headers: {
-        Authorization: `Token ${Deno.env.get('REPLICATE_API_TOKEN')}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        version: "c221b2b8ef527988fb59bf24a8b97c4561f1c671f73bd389f866bfb27c061316",
-        input: {
-          prompt,
-          negative_prompt: "ugly, blurry, low quality, distorted, disfigured, shadows, gradient",
-          width: 1024,
-          height: 1024,
-          num_outputs: 1,
-          scheduler: "DPMSolverMultistep",
-          num_inference_steps: 25,
-          guidance_scale: 7.5,
-        },
-      }),
-    });
+    const hf = new HfInference(Deno.env.get('HUGGING_FACE_ACCESS_TOKEN'))
 
-    const prediction = await response.json();
-    console.log("Initial prediction response:", prediction);
+    const image = await hf.textToImage({
+      inputs: prompt,
+      model: 'rexoscare/mandala-art-lora',
+      parameters: {
+        negative_prompt: "shadows, gradient, color, ugly, blurry, low quality, distorted, disfigured",
+      }
+    })
 
-    if (prediction.error) {
-      console.error("Prediction error:", prediction.error);
-      return new Response(
-        JSON.stringify({ error: prediction.error }),
-        { 
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
+    // Convert the blob to a base64 string
+    const arrayBuffer = await image.arrayBuffer()
+    const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
+    const imageUrl = `data:image/png;base64,${base64}`
 
     return new Response(
-      JSON.stringify(prediction),
+      JSON.stringify({ output: [imageUrl] }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    )
+
   } catch (error) {
     console.error("Error:", error);
     return new Response(
@@ -101,7 +65,7 @@ serve(async (req) => {
 });
 
 function generateEnhancedPrompt(settings: Record<string, unknown>) {
-  const basePrompt = "Create a line art mandala in black and white with the following characteristics:";
+  const basePrompt = "Create a black and white line art mandala with the following characteristics:";
   
   // Default settings if any are missing
   const defaultSettings = {
@@ -142,7 +106,7 @@ function generateEnhancedPrompt(settings: Record<string, unknown>) {
     Style: ${finalSettings.style}
     Theme: ${finalSettings.theme}
     Make it suitable for coloring with clear, well-defined lines.
-    Negative prompt: shadows, gradient`;
+    Black and white line art only, no shadows or gradients.`;
 
   return prompt;
 }
