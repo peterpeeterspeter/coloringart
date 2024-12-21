@@ -13,8 +13,8 @@ serve(async (req) => {
   }
 
   try {
-    const { settings, predictionId } = await req.json();
-    console.log("Received request:", { settings, predictionId });
+    const { settings } = await req.json();
+    console.log("Received request with settings:", settings);
 
     // Validate settings
     if (!settings || typeof settings !== 'object' || Array.isArray(settings)) {
@@ -28,30 +28,39 @@ serve(async (req) => {
       );
     }
 
-    // Generate the prompt based on settings
     const prompt = generateEnhancedPrompt(settings);
     console.log("Generated prompt:", prompt);
 
-    const hf = new HfInference(Deno.env.get('HUGGING_FACE_ACCESS_TOKEN'))
+    const hf = new HfInference(Deno.env.get('HUGGING_FACE_ACCESS_TOKEN'));
 
-    const image = await hf.textToImage({
-      inputs: prompt,
-      model: 'rexoscare/mandala-art-lora',
-      parameters: {
-        negative_prompt: "shadows, gradient, color, ugly, blurry, low quality, distorted, disfigured",
-      }
-    })
+    try {
+      const image = await hf.textToImage({
+        inputs: prompt,
+        model: 'rexoscare/mandala-art-lora',
+        parameters: {
+          negative_prompt: "shadows, gradient, color, ugly, blurry, low quality, distorted, disfigured",
+        }
+      });
 
-    // Convert the blob to a base64 string
-    const arrayBuffer = await image.arrayBuffer()
-    const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
-    const imageUrl = `data:image/png;base64,${base64}`
+      // Convert the blob to a base64 string
+      const arrayBuffer = await image.arrayBuffer();
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+      const imageUrl = `data:image/png;base64,${base64}`;
 
-    return new Response(
-      JSON.stringify({ output: [imageUrl] }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-
+      return new Response(
+        JSON.stringify({ output: [imageUrl] }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    } catch (hfError) {
+      console.error("Hugging Face API error:", hfError);
+      return new Response(
+        JSON.stringify({ error: "Failed to generate image" }),
+        { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
   } catch (error) {
     console.error("Error:", error);
     return new Response(

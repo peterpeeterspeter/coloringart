@@ -34,40 +34,20 @@ export const useMandalaGenerator = ({ answers }: MandalaGeneratorProps) => {
       
       console.log("Generating mandala with settings:", settings);
 
-      const { data: initialData, error: initialError } = await supabase.functions.invoke('generate-mandala', {
+      const { data, error } = await supabase.functions.invoke('generate-mandala', {
         body: { settings }
       });
 
-      if (initialError) {
-        console.error("Initial error:", initialError);
-        throw initialError;
+      if (error) {
+        console.error("Error generating mandala:", error);
+        throw error;
       }
 
-      console.log("Initial response:", initialData);
-
-      if (initialData.error) {
-        throw new Error(initialData.error);
+      if (!data || !data.output || !data.output[0]) {
+        throw new Error("No image was generated");
       }
 
-      const checkResult = async (predictionId: string): Promise<string> => {
-        const { data: statusData, error: statusError } = await supabase.functions.invoke('generate-mandala', {
-          body: { predictionId }
-        });
-
-        if (statusError) throw statusError;
-        console.log("Status check response:", statusData);
-        
-        if (statusData.status === "succeeded") {
-          return statusData.output[0];
-        } else if (statusData.status === "failed") {
-          throw new Error("Image generation failed");
-        }
-        
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        return checkResult(predictionId);
-      };
-
-      const imageUrl = await checkResult(initialData.id);
+      const imageUrl = data.output[0];
       setGeneratedImage(imageUrl);
       return imageUrl;
 
