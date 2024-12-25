@@ -9,6 +9,27 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      anonymous_generation_count: {
+        Row: {
+          created_at: string | null
+          generation_count: number | null
+          id: number
+          ip_address: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          generation_count?: number | null
+          id?: never
+          ip_address?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          generation_count?: number | null
+          id?: never
+          ip_address?: string | null
+        }
+        Relationships: []
+      }
       coloring_plates: {
         Row: {
           created_at: string | null
@@ -110,10 +131,18 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      anonymous_generation_stats: {
+        Row: {
+          total_anonymous_generations: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      count_anonymous_generations: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never
