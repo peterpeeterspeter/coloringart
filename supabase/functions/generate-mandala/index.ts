@@ -10,7 +10,10 @@ const corsHeaders = {
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { 
+      headers: corsHeaders,
+      status: 204
+    });
   }
 
   try {
@@ -86,7 +89,7 @@ serve(async (req) => {
       }),
       { 
         headers: { 
-          ...corsHeaders, 
+          ...corsHeaders,
           'Content-Type': 'application/json'
         }
       }
@@ -94,25 +97,6 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Edge function error:', error);
-    
-    if (error instanceof Error) {
-      const { jobId } = await req.json();
-      if (jobId) {
-        const supabase = createClient(
-          Deno.env.get('SUPABASE_URL') ?? '',
-          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-        );
-
-        await supabase
-          .from('mandala_jobs')
-          .update({ 
-            status: 'failed',
-            error: error.message,
-            completed_at: new Date().toISOString()
-          })
-          .eq('id', jobId);
-      }
-    }
 
     return new Response(
       JSON.stringify({ 
@@ -122,7 +106,7 @@ serve(async (req) => {
       { 
         status: 500,
         headers: { 
-          ...corsHeaders, 
+          ...corsHeaders,
           'Content-Type': 'application/json'
         }
       }
