@@ -16,6 +16,7 @@ export const useMandalaGenerator = ({ answers }: MandalaGeneratorProps) => {
   const generateMandala = async () => {
     try {
       setIsGenerating(true);
+      console.log("Starting mandala generation...");
       
       // Create settings object with only valid values
       const settings: Record<string, string | string[]> = {};
@@ -36,20 +37,27 @@ export const useMandalaGenerator = ({ answers }: MandalaGeneratorProps) => {
       
       console.log("Creating mandala job with settings:", settings);
 
-      // Create a job record with user_id
+      // Create a job record
       const { data: job, error: jobError } = await supabase
         .from('mandala_jobs')
         .insert({
           status: 'processing',
           settings,
-          user_id: session?.user?.id // Add the user_id here
+          user_id: session?.user?.id || null
         })
         .select()
         .single();
 
       if (jobError) {
-        throw jobError;
+        console.error("Error creating job:", jobError);
+        throw new Error("Failed to create mandala job");
       }
+
+      if (!job) {
+        throw new Error("No job was created");
+      }
+
+      console.log("Job created successfully:", job);
 
       // Generate the mandala
       const { data, error } = await supabase.functions.invoke('generate-mandala', {
@@ -66,11 +74,12 @@ export const useMandalaGenerator = ({ answers }: MandalaGeneratorProps) => {
       }
 
       const imageUrl = data.output[0];
+      console.log("Mandala generated successfully:", imageUrl);
       setGeneratedImage(imageUrl);
       return imageUrl;
 
     } catch (error) {
-      console.error("Error generating mandala:", error);
+      console.error("Error in mandala generation:", error);
       toast.error(error instanceof Error ? error.message : "Failed to generate mandala. Please try again.");
       throw error;
     } finally {

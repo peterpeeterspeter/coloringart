@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useSession } from "@supabase/auth-helpers-react";
 import { useQuestionnaireState } from "@/hooks/useQuestionnaireState";
 import { MandalaForm } from "./mandala/MandalaForm";
@@ -24,7 +24,6 @@ export const MandalaQuestionnaire = () => {
   } = useQuestionnaireState();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const { toast } = useToast();
   const session = useSession();
   const navigate = useNavigate();
 
@@ -38,21 +37,13 @@ export const MandalaQuestionnaire = () => {
     localStorage.setItem('generationCount', (currentCount + 1).toString());
 
     if (!session?.user?.id && currentCount >= 9) {
-      toast({
-        title: "Free Generations Limit Reached",
-        description: "You've reached your 10 free generations limit. Please sign in to continue.",
-        variant: "destructive",
-      });
+      toast.error("You've reached your 10 free generations limit. Please sign in to continue.");
       navigate("/auth");
       return;
     }
 
     if (!isValid()) {
-      toast({
-        title: "Name Required",
-        description: "Please provide a name for your mandala",
-        variant: "destructive",
-      });
+      toast.error("Please provide a name for your mandala");
       return;
     }
 
@@ -62,10 +53,7 @@ export const MandalaQuestionnaire = () => {
       
       if (!session?.user?.id) {
         setIsSuccess(true);
-        toast({
-          title: "Success!",
-          description: "Your mandala has been created",
-        });
+        toast.success("Your mandala has been created");
         return;
       }
 
@@ -79,21 +67,17 @@ export const MandalaQuestionnaire = () => {
         user_id: session.user.id,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error saving mandala:", error);
+        throw error;
+      }
 
       setIsSuccess(true);
-      toast({
-        title: "Success!",
-        description: "Your mandala has been created",
-      });
+      toast.success("Your mandala has been created");
       
     } catch (error) {
       console.error("Error creating mandala:", error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create mandala. Please try again.",
-        variant: "destructive",
-      });
+      toast.error(error instanceof Error ? error.message : "Failed to create mandala. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
