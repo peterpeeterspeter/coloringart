@@ -63,6 +63,7 @@ serve(async (req) => {
 
     // Only update job if jobId is provided
     if (jobId) {
+      console.log("Updating job status:", jobId);
       const supabase = createClient(
         Deno.env.get('SUPABASE_URL') ?? '',
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
