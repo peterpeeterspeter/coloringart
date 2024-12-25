@@ -18,7 +18,7 @@ serve(async (req) => {
 
   try {
     const { settings, jobId } = await req.json();
-    console.log("Request received:", { settings, jobId });
+    console.log("Starting mandala generation with settings:", settings);
 
     // Generate prompt from settings
     const promptElements = Object.entries(settings)
@@ -26,14 +26,12 @@ serve(async (req) => {
       .map(([_, value]) => Array.isArray(value) ? value.join(', ') : value);
 
     const prompt = `Create a black and white line art mandala design with the following elements: ${promptElements.join(', ')}. Make it symmetrical and balanced, with clear, well-defined lines suitable for coloring.`;
-
     console.log("Generated prompt:", prompt);
 
     // Initialize Hugging Face client
     const hf = new HfInference(Deno.env.get('HUGGING_FACE_ACCESS_TOKEN'));
     
     // Generate the image
-    console.log("Starting image generation...");
     const image = await hf.textToImage({
       inputs: prompt,
       model: 'rexoscare/mandala-art-lora',
@@ -44,10 +42,8 @@ serve(async (req) => {
     });
 
     if (!image) {
-      throw new Error("No image generated");
+      throw new Error("No image was generated");
     }
-
-    console.log("Image generation successful");
 
     // Convert image to base64
     const arrayBuffer = await image.arrayBuffer();
@@ -56,27 +52,30 @@ serve(async (req) => {
 
     // Update job status if jobId is provided
     if (jobId) {
-      console.log("Updating job status for ID:", jobId);
-      const supabase = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-      );
+      try {
+        const supabase = createClient(
+          Deno.env.get('SUPABASE_URL') ?? '',
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+        );
 
-      const { error: updateError } = await supabase
-        .from('mandala_jobs')
-        .update({ 
-          status: 'completed',
-          image_url: imageUrl,
-          completed_at: new Date().toISOString()
-        })
-        .eq('id', jobId);
+        const { error: updateError } = await supabase
+          .from('mandala_jobs')
+          .update({ 
+            status: 'completed',
+            image_url: imageUrl,
+            completed_at: new Date().toISOString()
+          })
+          .eq('id', jobId);
 
-      if (updateError) {
-        console.error("Error updating job:", updateError);
+        if (updateError) {
+          console.error("Error updating job:", updateError);
+        }
+      } catch (dbError) {
+        console.error("Database error:", dbError);
+        // Continue execution even if DB update fails
       }
     }
 
-    // Return success response
     return new Response(
       JSON.stringify({ 
         success: true,
@@ -93,11 +92,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('Edge function error:', error);
     
-    // Return error response
     return new Response(
       JSON.stringify({ 
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'An unexpected error occurred'
       }),
       { 
         status: 500,
