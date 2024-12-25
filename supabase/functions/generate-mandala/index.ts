@@ -20,11 +20,6 @@ serve(async (req) => {
     const { settings, jobId } = await req.json();
     console.log("Request received:", { settings, jobId });
 
-    // Input validation
-    if (!settings || typeof settings !== 'object') {
-      throw new Error("Invalid settings provided");
-    }
-
     // Generate prompt from settings
     const promptElements = Object.entries(settings)
       .filter(([_, value]) => value && value !== '')
@@ -34,14 +29,11 @@ serve(async (req) => {
 
     console.log("Generated prompt:", prompt);
 
-    const hfToken = Deno.env.get('HUGGING_FACE_ACCESS_TOKEN');
-    if (!hfToken) {
-      throw new Error("HUGGING_FACE_ACCESS_TOKEN not configured");
-    }
-
-    const hf = new HfInference(hfToken);
-    console.log("Starting image generation...");
+    // Initialize Hugging Face client
+    const hf = new HfInference(Deno.env.get('HUGGING_FACE_ACCESS_TOKEN'));
     
+    // Generate the image
+    console.log("Starting image generation...");
     const image = await hf.textToImage({
       inputs: prompt,
       model: 'rexoscare/mandala-art-lora',
@@ -57,13 +49,14 @@ serve(async (req) => {
 
     console.log("Image generation successful");
 
+    // Convert image to base64
     const arrayBuffer = await image.arrayBuffer();
     const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
     const imageUrl = `data:image/png;base64,${base64}`;
 
-    // Only update job if jobId is provided
+    // Update job status if jobId is provided
     if (jobId) {
-      console.log("Updating job status:", jobId);
+      console.log("Updating job status for ID:", jobId);
       const supabase = createClient(
         Deno.env.get('SUPABASE_URL') ?? '',
         Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -83,6 +76,7 @@ serve(async (req) => {
       }
     }
 
+    // Return success response
     return new Response(
       JSON.stringify({ 
         success: true,
@@ -98,7 +92,8 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Edge function error:', error);
-
+    
+    // Return error response
     return new Response(
       JSON.stringify({ 
         success: false,
