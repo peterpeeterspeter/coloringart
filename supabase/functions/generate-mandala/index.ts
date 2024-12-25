@@ -22,11 +22,6 @@ serve(async (req) => {
       throw new Error("Invalid settings provided");
     }
 
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-
     // Generate prompt from settings
     const promptElements = Object.entries(settings)
       .filter(([_, value]) => value && value !== '')
@@ -63,8 +58,13 @@ serve(async (req) => {
     const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
     const imageUrl = `data:image/png;base64,${base64}`;
 
-    // Update job status if jobId is provided
+    // Only update job if jobId is provided
     if (jobId) {
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+
       const { error: updateError } = await supabase
         .from('mandala_jobs')
         .update({ 
@@ -95,34 +95,29 @@ serve(async (req) => {
   } catch (error) {
     console.error('Edge function error:', error);
     
-    try {
-      if (error instanceof Error) {
-        const { jobId } = await req.json();
-        if (jobId) {
-          const supabase = createClient(
-            Deno.env.get('SUPABASE_URL') ?? '',
-            Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-          );
+    if (error instanceof Error) {
+      const { jobId } = await req.json();
+      if (jobId) {
+        const supabase = createClient(
+          Deno.env.get('SUPABASE_URL') ?? '',
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+        );
 
-          await supabase
-            .from('mandala_jobs')
-            .update({ 
-              status: 'failed',
-              error: error.message,
-              completed_at: new Date().toISOString()
-            })
-            .eq('id', jobId);
-        }
+        await supabase
+          .from('mandala_jobs')
+          .update({ 
+            status: 'failed',
+            error: error.message,
+            completed_at: new Date().toISOString()
+          })
+          .eq('id', jobId);
       }
-    } catch (updateError) {
-      console.error('Error updating job status:', updateError);
     }
 
     return new Response(
       JSON.stringify({ 
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
-        details: error instanceof Error ? error.stack : 'Error details not available'
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
       }),
       { 
         status: 500,
