@@ -39,7 +39,14 @@ serve(async (req) => {
     try {
       console.log("Starting image generation with prompt:", settings.prompt)
       
-      // Generate the image
+      // Create an AbortController for timeout
+      const controller = new AbortController()
+      const timeout = setTimeout(() => {
+        controller.abort()
+        console.log("Generation timed out after 45 seconds")
+      }, 45000) // 45 second timeout
+
+      // Generate the image with timeout
       const response = await hf.textToImage({
         inputs: settings.prompt,
         model: "prithivMLmods/Coloring-Book-Flux-LoRA",
@@ -47,7 +54,9 @@ serve(async (req) => {
           guidance_scale: 7.5,
           num_inference_steps: 30,
         }
-      })
+      }, { signal: controller.signal })
+
+      clearTimeout(timeout)
 
       if (!response) {
         throw new Error("No response from Hugging Face API")
@@ -76,7 +85,10 @@ serve(async (req) => {
       )
     } catch (apiError) {
       console.error("Hugging Face API error:", apiError)
-      throw new Error(`Hugging Face API error: ${apiError.message}`)
+      const errorMessage = apiError.name === 'AbortError' 
+        ? 'Generation timed out after 45 seconds. Please try again.'
+        : `Hugging Face API error: ${apiError.message}`
+      throw new Error(errorMessage)
     }
 
   } catch (error) {

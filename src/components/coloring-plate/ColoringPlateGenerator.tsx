@@ -45,7 +45,6 @@ export const useColoringPlateGenerator = ({ prompt, answers }: ColoringPlateGene
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationAttempts, setGenerationAttempts] = useState(0);
   const MAX_ATTEMPTS = 3;
-  const GENERATION_TIMEOUT = 30000; // 30 seconds
 
   const generateColoringPlate = async (): Promise<string | null> => {
     if (isGenerating) {
@@ -66,24 +65,12 @@ export const useColoringPlateGenerator = ({ prompt, answers }: ColoringPlateGene
       
       const enhancedPrompt = generateEnhancedPrompt(prompt, answers);
       console.log("Using enhanced prompt:", enhancedPrompt);
-      
-      // Create a timeout promise
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("Generation timed out")), GENERATION_TIMEOUT);
-      });
 
-      // Create the generation promise
-      const generationPromise = supabase.functions.invoke('generate-coloring-plate', {
+      const { data, error } = await supabase.functions.invoke('generate-coloring-plate', {
         body: { 
           settings: { prompt: enhancedPrompt }
         }
       });
-
-      // Race between timeout and generation
-      const { data, error } = await Promise.race([
-        generationPromise,
-        timeoutPromise
-      ]) as any;
 
       if (error) {
         console.error("Error generating coloring plate:", error);
@@ -104,11 +91,6 @@ export const useColoringPlateGenerator = ({ prompt, answers }: ColoringPlateGene
       console.error("Error in coloring plate generation:", error);
       const errorMessage = error instanceof Error ? error.message : "Failed to generate coloring plate. Please try again.";
       toast.error(errorMessage);
-      
-      if (error instanceof Error && error.message.includes("timed out")) {
-        toast.error("Generation timed out. Please try again.");
-      }
-      
       throw error;
     } finally {
       setIsGenerating(false);
