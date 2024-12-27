@@ -15,8 +15,7 @@ export const ColoringPlateQuestionnaire = () => {
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [submissionAttempted, setSubmissionAttempted] = useState(false);
-  const abortControllerRef = useRef<AbortController | null>(null);
+  const generationLockRef = useRef(false);
   const session = useSession();
   const navigate = useNavigate();
 
@@ -25,17 +24,15 @@ export const ColoringPlateQuestionnaire = () => {
     answers,
   });
 
-  // Cleanup function to abort any pending requests
+  // Reset generation lock and cleanup on unmount
   useEffect(() => {
     return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
+      generationLockRef.current = false;
     };
   }, []);
 
   const handleSubmit = async () => {
-    if (submissionAttempted || isGenerating || isSubmitting) {
+    if (generationLockRef.current || isGenerating || isSubmitting) {
       toast.error("Generation already in progress. Please wait or refresh the page to try again.");
       return;
     }
@@ -55,14 +52,8 @@ export const ColoringPlateQuestionnaire = () => {
       return;
     }
 
-    // Create new AbortController for this submission
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    abortControllerRef.current = new AbortController();
-
+    generationLockRef.current = true;
     setIsSubmitting(true);
-    setSubmissionAttempted(true);
 
     try {
       const imageUrl = await generateColoringPlate();
@@ -88,12 +79,9 @@ export const ColoringPlateQuestionnaire = () => {
     } catch (error) {
       console.error("Error creating coloring plate:", error);
       toast.error("Failed to create coloring plate. Please try again.");
-      setSubmissionAttempted(false);
+      generationLockRef.current = false;
     } finally {
       setIsSubmitting(false);
-      if (abortControllerRef.current) {
-        abortControllerRef.current = null;
-      }
     }
   };
 
