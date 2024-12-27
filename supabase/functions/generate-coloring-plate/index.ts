@@ -39,7 +39,8 @@ serve(async (req) => {
       inputs: settings.prompt,
       model: "prithivMLmods/Coloring-Book-Flux-LoRA",
       parameters: {
-        negative_prompt: "blurry, bad, text, watermark, signature, color, photorealistic, shadows, gradient",
+        guidance_scale: 7.5,
+        num_inference_steps: 50
       }
     });
 

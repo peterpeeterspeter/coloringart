@@ -31,12 +31,13 @@ serve(async (req) => {
 
     console.log("Using prompt:", mandalaPrompt)
 
-    // Generate the image
+    // Generate the image using the correct parameter structure
     const image = await hf.textToImage({
       inputs: mandalaPrompt,
       model: "rexoscare/mandala-art-lora",
       parameters: {
-        negative_prompt: "blurry, bad, text, watermark, signature, color, photorealistic",
+        guidance_scale: 7.5,
+        num_inference_steps: 50
       }
     });
 
