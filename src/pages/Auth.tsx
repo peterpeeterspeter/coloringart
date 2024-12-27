@@ -15,13 +15,16 @@ const AuthPage = () => {
     const checkSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) throw error;
+        if (error) {
+          console.error('Session check error:', error);
+          toast.error("Failed to check authentication status");
+          throw error;
+        }
         if (session) {
           navigate("/");
         }
       } catch (error) {
         console.error('Auth error:', error);
-        toast.error("Authentication error. Please try again.");
       } finally {
         setIsLoading(false);
       }
@@ -33,7 +36,6 @@ const AuthPage = () => {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
-        console.log('Auth state changed: User logged in');
         navigate("/");
       }
     });
@@ -90,6 +92,7 @@ const AuthPage = () => {
             }}
             theme="light"
             providers={[]}
+            redirectTo={window.location.origin}
           />
         </div>
       </div>
