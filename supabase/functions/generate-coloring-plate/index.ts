@@ -24,24 +24,30 @@ serve(async (req) => {
       throw new Error("No prompt provided in settings")
     }
 
-    console.log("Starting image generation with prompt:", settings.prompt)
-
-    // Initialize Hugging Face client
+    // Initialize Hugging Face client with timeout
     const hf = new HfInference(Deno.env.get('HUGGING_FACE_ACCESS_TOKEN'))
-    if (!hf) {
-      throw new Error("Failed to initialize Hugging Face client")
-    }
+    
+    // Set a reasonable timeout for the API call
+    const timeout = 25000 // 25 seconds
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), timeout)
 
     try {
-      // Generate the image
+      console.log("Starting image generation with prompt:", settings.prompt)
+      
+      // Generate the image with timeout
       const response = await hf.textToImage({
         inputs: settings.prompt,
         model: "prithivMLmods/Coloring-Book-Flux-LoRA",
         parameters: {
           guidance_scale: 7.5,
-          num_inference_steps: 50
+          num_inference_steps: 30, // Reduced from 50 to save compute resources
         }
+      }, {
+        signal: controller.signal
       })
+
+      clearTimeout(timeoutId)
 
       if (!response) {
         throw new Error("No response from Hugging Face API")
@@ -70,6 +76,7 @@ serve(async (req) => {
         }
       )
     } catch (apiError) {
+      clearTimeout(timeoutId)
       console.error("Hugging Face API error:", apiError)
       throw new Error(`Hugging Face API error: ${apiError.message}`)
     }
