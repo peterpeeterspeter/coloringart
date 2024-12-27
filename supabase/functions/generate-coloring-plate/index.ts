@@ -13,49 +13,43 @@ serve(async (req) => {
   }
 
   try {
-    const { settings, predictionId } = await req.json()
-    console.log("Received request:", { settings, predictionId })
+    const { settings } = await req.json()
+    console.log("Received request with settings:", settings)
 
-    // If predictionId is provided, return success since we're using direct generation now
-    if (predictionId) {
-      return new Response(
-        JSON.stringify({ 
-          status: 'succeeded',
-          output: [settings.imageUrl] 
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    if (!settings?.prompt) {
-      throw new Error("No prompt provided");
+    if (!settings || !settings.prompt) {
+      throw new Error("No prompt provided in settings")
     }
 
     // Initialize Hugging Face client
     const hf = new HfInference(Deno.env.get('HUGGING_FACE_ACCESS_TOKEN'))
-    
-    console.log("Generating image with prompt:", settings.prompt);
-    const image = await hf.textToImage({
+
+    console.log("Generating coloring plate with prompt:", settings.prompt)
+
+    // Generate the image using the correct parameter structure
+    const response = await hf.textToImage({
       inputs: settings.prompt,
       model: "prithivMLmods/Coloring-Book-Flux-LoRA",
       parameters: {
         guidance_scale: 7.5,
         num_inference_steps: 50
       }
-    });
+    })
 
-    // Convert the blob to a base64 string
-    const arrayBuffer = await image.arrayBuffer()
+    // Convert blob to base64
+    const arrayBuffer = await response.arrayBuffer()
     const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
     const imageUrl = `data:image/png;base64,${base64}`
 
+    console.log("Successfully generated coloring plate")
+
     return new Response(
-      JSON.stringify({ 
-        id: crypto.randomUUID(),
-        status: 'succeeded',
-        output: [imageUrl]
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ output: [imageUrl] }),
+      { 
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        } 
+      }
     )
 
   } catch (error) {

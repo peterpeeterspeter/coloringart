@@ -32,23 +32,30 @@ serve(async (req) => {
     console.log("Using prompt:", mandalaPrompt)
 
     // Generate the image using the correct parameter structure
-    const image = await hf.textToImage({
+    const response = await hf.textToImage({
       inputs: mandalaPrompt,
       model: "rexoscare/mandala-art-lora",
       parameters: {
         guidance_scale: 7.5,
         num_inference_steps: 50
       }
-    });
+    })
 
-    // Convert the blob to a base64 string
-    const arrayBuffer = await image.arrayBuffer()
+    // Convert blob to base64
+    const arrayBuffer = await response.arrayBuffer()
     const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
     const imageUrl = `data:image/png;base64,${base64}`
 
+    console.log("Successfully generated mandala")
+
     return new Response(
-      JSON.stringify({ imageUrl }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ output: [imageUrl] }),
+      { 
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        } 
+      }
     )
 
   } catch (error) {
