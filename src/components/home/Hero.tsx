@@ -28,7 +28,9 @@ export const Hero = () => {
               Try SoulScape
             </Button>
           </div>
-          <p className="text-sm text-gray-500 font-medium">10 free generations • No credit card required</p>
+          <p className="text-sm text-gray-500 font-medium">
+            10 free generations • No credit card required
+          </p>
         </div>
         <div className="md:w-1/2">
           <img 
