@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { settings } = await req.json()
+    const { settings, jobId } = await req.json()
     console.log("Received request with settings:", settings)
 
     if (!settings) {
@@ -31,7 +31,7 @@ serve(async (req) => {
 
     console.log("Using prompt:", mandalaPrompt)
 
-    // Generate the image using the correct parameter structure
+    // Generate the image
     const response = await hf.textToImage({
       inputs: mandalaPrompt,
       model: "rexoscare/mandala-art-lora",
@@ -45,7 +45,7 @@ serve(async (req) => {
       throw new Error("No response from Hugging Face API")
     }
 
-    // Convert blob to base64 more efficiently
+    // Convert blob to base64
     const buffer = await response.arrayBuffer()
     const bytes = new Uint8Array(buffer)
     const binary = bytes.reduce((acc, byte) => acc + String.fromCharCode(byte), '')
@@ -53,6 +53,22 @@ serve(async (req) => {
     const imageUrl = `data:image/png;base64,${base64}`
 
     console.log("Successfully generated mandala")
+
+    // Update the job with the generated image URL
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    
+    if (jobId) {
+      const supabase = createClient(supabaseUrl!, supabaseKey!)
+      await supabase
+        .from('mandala_jobs')
+        .update({ 
+          status: 'completed',
+          image_url: imageUrl,
+          completed_at: new Date().toISOString()
+        })
+        .eq('id', jobId)
+    }
 
     return new Response(
       JSON.stringify({ output: [imageUrl] }),

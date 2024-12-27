@@ -14,6 +14,11 @@ export const useMandalaGenerator = ({ answers }: MandalaGeneratorProps) => {
   const session = useSession();
 
   const generateMandala = async () => {
+    if (isGenerating) {
+      console.log("Generation already in progress");
+      return;
+    }
+
     try {
       setIsGenerating(true);
       console.log("Starting mandala generation...");
