@@ -15,6 +15,7 @@ export const ColoringPlateQuestionnaire = () => {
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [submissionAttempted, setSubmissionAttempted] = useState(false);
   const session = useSession();
   const navigate = useNavigate();
 
@@ -24,6 +25,11 @@ export const ColoringPlateQuestionnaire = () => {
   });
 
   const handleSubmit = async () => {
+    if (submissionAttempted) {
+      toast.error("Generation already in progress. Please wait or refresh the page to try again.");
+      return;
+    }
+
     if (isSubmitting || isGenerating) {
       toast.error("Generation already in progress");
       return;
@@ -45,6 +51,8 @@ export const ColoringPlateQuestionnaire = () => {
     }
 
     setIsSubmitting(true);
+    setSubmissionAttempted(true);
+
     try {
       const imageUrl = await generateColoringPlate();
       
@@ -69,6 +77,7 @@ export const ColoringPlateQuestionnaire = () => {
     } catch (error) {
       console.error("Error creating coloring plate:", error);
       toast.error("Failed to create coloring plate. Please try again.");
+      setSubmissionAttempted(false); // Allow retry on error
     } finally {
       setIsSubmitting(false);
     }
