@@ -32,8 +32,11 @@ serve(async (req) => {
     // Generate the image
     const image = await hf.textToImage({
       inputs: mandalaPrompt,
-      model: 'black-forest-labs/FLUX.1-schnell',
-    })
+      model: "rexoscare/mandala-art-lora",
+      parameters: {
+        negative_prompt: "blurry, bad, text, watermark, signature, color, photorealistic",
+      }
+    });
 
     // Convert the blob to a base64 string
     const arrayBuffer = await image.arrayBuffer()
