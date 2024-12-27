@@ -15,104 +15,72 @@ serve(async (req) => {
 
   try {
     const { settings, jobId } = await req.json()
-    console.log("Starting mandala generation with settings:", settings)
+    console.log("Received request with settings:", settings, "and jobId:", jobId)
 
-    // Initialize Hugging Face client first to fail fast if token is invalid
+    // Initialize Hugging Face client
     const hf = new HfInference(Deno.env.get('HUGGING_FACE_ACCESS_TOKEN'))
-    if (!hf) {
-      throw new Error("Failed to initialize Hugging Face client")
-    }
+    
+    // Create the mandala prompt
+    const mandalaPrompt = `Create a beautiful mandala design with the following characteristics: ${
+      Object.entries(settings)
+        .map(([key, value]) => `${key}: ${value}`)
+        .join(', ')
+    }. Style: Create a detailed mandala line art in black and white, perfect for coloring. The design should be symmetrical and intricate.`
 
-    // Generate prompt from settings
-    const promptElements = []
-    for (const [key, value] of Object.entries(settings)) {
-      if (Array.isArray(value) && value.length > 0) {
-        promptElements.push(value.join(', '))
-      } else if (typeof value === 'string' && value.trim() !== '') {
-        promptElements.push(value)
-      }
-    }
-
-    const prompt = `Create a black and white line art mandala design with the following elements: ${promptElements.join(', ')}. Make it symmetrical and balanced, with clear, well-defined lines suitable for coloring.`
-    console.log("Using prompt:", prompt)
+    console.log("Generated prompt:", mandalaPrompt)
 
     // Generate the image
     const image = await hf.textToImage({
-      inputs: prompt,
-      model: 'rexoscare/mandala-art-lora',
-      parameters: {
-        num_inference_steps: 30,
-        guidance_scale: 7.5,
-      }
+      inputs: mandalaPrompt,
+      model: 'black-forest-labs/FLUX.1-schnell',
     })
 
-    if (!image) {
-      throw new Error("No image was generated")
-    }
-
-    // Convert image to base64
+    // Convert the blob to a base64 string
     const arrayBuffer = await image.arrayBuffer()
     const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
     const imageUrl = `data:image/png;base64,${base64}`
 
-    // Update job status if jobId is provided
+    // Initialize Supabase client
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+
+    // Update the job with the generated image
     if (jobId) {
-      let supabase
-      try {
-        supabase = createClient(
-          Deno.env.get('SUPABASE_URL') ?? '',
-          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-        )
+      const { error: updateError } = await supabaseAdmin
+        .from('mandala_jobs')
+        .update({
+          status: 'completed',
+          image_url: imageUrl,
+          completed_at: new Date().toISOString()
+        })
+        .eq('id', jobId)
 
-        const { error: updateError } = await supabase
-          .from('mandala_jobs')
-          .update({
-            status: 'completed',
-            image_url: imageUrl,
-            completed_at: new Date().toISOString()
-          })
-          .eq('id', jobId)
-
-        if (updateError) {
-          console.error("Error updating job:", updateError)
-          // Don't throw, continue to return the image
-        }
-      } catch (dbError) {
-        console.error("Database error:", dbError)
-        // Don't throw, continue to return the image
+      if (updateError) {
+        console.error("Error updating job:", updateError)
+        throw updateError
       }
     }
 
     return new Response(
-      JSON.stringify({
-        success: true,
+      JSON.stringify({ 
+        status: 'succeeded',
         output: [imageUrl]
       }),
-      {
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
-      }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
   } catch (error) {
-    console.error('Edge function error:', error)
-    
-    // Ensure we're not passing the full error object which might cause circular references
-    const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred'
-    
+    console.error('Error in generate-mandala function:', error)
     return new Response(
-      JSON.stringify({
-        success: false,
-        error: errorMessage
+      JSON.stringify({ 
+        error: 'Failed to generate mandala',
+        details: error.message 
       }),
-      {
-        status: 500,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500
       }
     )
   }
