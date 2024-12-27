@@ -4,19 +4,20 @@ import { HfInference } from 'https://esm.sh/@huggingface/inference@2.3.2'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS'
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Max-Age': '86400',
 }
 
 serve(async (req) => {
-  try {
-    // Handle CORS preflight requests
-    if (req.method === 'OPTIONS') {
-      return new Response(null, { 
-        headers: corsHeaders,
-        status: 204
-      })
-    }
+  // Always handle CORS preflight requests first
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { 
+      headers: corsHeaders,
+      status: 204
+    })
+  }
 
+  try {
     const { settings } = await req.json()
     console.log("Received request with settings:", settings)
 
@@ -31,19 +32,14 @@ serve(async (req) => {
       throw new Error("Missing Hugging Face API token")
     }
 
-    // Initialize Hugging Face client with timeout
+    // Initialize Hugging Face client
     const hf = new HfInference(hfToken)
     console.log("Initialized Hugging Face client")
     
-    // Set a reasonable timeout for the API call
-    const timeout = 25000 // 25 seconds
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), timeout)
-
     try {
       console.log("Starting image generation with prompt:", settings.prompt)
       
-      // Generate the image with timeout
+      // Generate the image
       const response = await hf.textToImage({
         inputs: settings.prompt,
         model: "prithivMLmods/Coloring-Book-Flux-LoRA",
@@ -51,11 +47,7 @@ serve(async (req) => {
           guidance_scale: 7.5,
           num_inference_steps: 30,
         }
-      }, {
-        signal: controller.signal
       })
-
-      clearTimeout(timeoutId)
 
       if (!response) {
         throw new Error("No response from Hugging Face API")
@@ -79,12 +71,10 @@ serve(async (req) => {
           headers: { 
             ...corsHeaders, 
             'Content-Type': 'application/json',
-            'Cache-Control': 'no-store'
           } 
         }
       )
     } catch (apiError) {
-      clearTimeout(timeoutId)
       console.error("Hugging Face API error:", apiError)
       throw new Error(`Hugging Face API error: ${apiError.message}`)
     }
@@ -100,7 +90,6 @@ serve(async (req) => {
         headers: { 
           ...corsHeaders, 
           'Content-Type': 'application/json',
-          'Cache-Control': 'no-store'
         }, 
         status: 500 
       }
