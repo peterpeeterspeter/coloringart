@@ -4,10 +4,9 @@ import { toast } from "sonner";
 
 interface ColoringPlateSuccessProps {
   imageUrl: string | null;
-  onDownload: () => void;
 }
 
-export const ColoringPlateSuccess = ({ imageUrl, onDownload }: ColoringPlateSuccessProps) => {
+export const ColoringPlateSuccess = ({ imageUrl }: ColoringPlateSuccessProps) => {
   const handleDownload = async () => {
     if (!imageUrl) {
       toast.error("No image available to download");
