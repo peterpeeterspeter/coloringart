@@ -41,7 +41,7 @@ serve(async (req) => {
         model: "prithivMLmods/Coloring-Book-Flux-LoRA",
         parameters: {
           guidance_scale: 7.5,
-          num_inference_steps: 30, // Reduced from 50 to save compute resources
+          num_inference_steps: 30,
         }
       }, {
         signal: controller.signal
