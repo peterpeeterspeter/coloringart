@@ -35,9 +35,15 @@ serve(async (req) => {
       }
     })
 
-    // Convert blob to base64
-    const arrayBuffer = await response.arrayBuffer()
-    const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
+    if (!response) {
+      throw new Error("No response from Hugging Face API")
+    }
+
+    // Convert blob to base64 more efficiently
+    const buffer = await response.arrayBuffer()
+    const bytes = new Uint8Array(buffer)
+    const binary = bytes.reduce((acc, byte) => acc + String.fromCharCode(byte), '')
+    const base64 = btoa(binary)
     const imageUrl = `data:image/png;base64,${base64}`
 
     console.log("Successfully generated coloring plate")
