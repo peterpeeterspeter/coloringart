@@ -8,17 +8,20 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
-  }
-
   try {
+    // Handle CORS preflight requests
+    if (req.method === 'OPTIONS') {
+      return new Response(null, { headers: corsHeaders })
+    }
+
     const { settings, predictionId } = await req.json()
-    console.log("Received request:", { settings, predictionId })
+    console.log("Received request with settings:", settings)
 
     // Initialize Hugging Face client
     const hf = new HfInference(Deno.env.get('HUGGING_FACE_ACCESS_TOKEN'))
+    if (!hf) {
+      throw new Error("Failed to initialize Hugging Face client")
+    }
 
     // If predictionId is provided, check the status of an existing prediction
     if (predictionId) {
@@ -31,59 +34,65 @@ serve(async (req) => {
         { 
           headers: { 
             ...corsHeaders, 
-            'Content-Type': 'application/json' 
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store'
           } 
         }
       )
     }
 
-    // Start new prediction
+    // Validate request
     if (!settings?.prompt) {
       throw new Error("No prompt provided in settings")
     }
 
-    console.log("Starting new prediction with prompt:", settings.prompt)
+    console.log("Starting image generation with prompt:", settings.prompt)
 
-    // Generate the image
-    const response = await hf.textToImage({
-      inputs: settings.prompt,
-      model: "prithivMLmods/Coloring-Book-Flux-LoRA",
-      parameters: {
-        guidance_scale: 7.5,
-        num_inference_steps: 50
+    try {
+      // Generate the image
+      const response = await hf.textToImage({
+        inputs: settings.prompt,
+        model: "prithivMLmods/Coloring-Book-Flux-LoRA",
+        parameters: {
+          guidance_scale: 7.5,
+          num_inference_steps: 50
+        }
+      })
+
+      if (!response) {
+        throw new Error("No response from Hugging Face API")
       }
-    })
 
-    if (!response) {
-      throw new Error("No response from Hugging Face API")
+      // Convert blob to base64
+      const buffer = await response.arrayBuffer()
+      const bytes = new Uint8Array(buffer)
+      const binary = bytes.reduce((acc, byte) => acc + String.fromCharCode(byte), '')
+      const base64 = btoa(binary)
+      const imageUrl = `data:image/png;base64,${base64}`
+
+      console.log("Successfully generated coloring plate")
+
+      return new Response(
+        JSON.stringify({ 
+          id: crypto.randomUUID(),
+          status: "succeeded",
+          output: [imageUrl] 
+        }),
+        { 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-store'
+          } 
+        }
+      )
+    } catch (apiError) {
+      console.error("Hugging Face API error:", apiError)
+      throw new Error(`Hugging Face API error: ${apiError.message}`)
     }
 
-    // Convert blob to base64
-    const buffer = await response.arrayBuffer()
-    const bytes = new Uint8Array(buffer)
-    const binary = bytes.reduce((acc, byte) => acc + String.fromCharCode(byte), '')
-    const base64 = btoa(binary)
-    const imageUrl = `data:image/png;base64,${base64}`
-
-    console.log("Successfully generated coloring plate")
-
-    return new Response(
-      JSON.stringify({ 
-        id: crypto.randomUUID(),
-        status: "succeeded",
-        output: [imageUrl] 
-      }),
-      { 
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache'
-        } 
-      }
-    )
-
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Error in generate-coloring-plate:', error)
     return new Response(
       JSON.stringify({ 
         error: 'Failed to generate coloring plate', 
@@ -92,7 +101,8 @@ serve(async (req) => {
       { 
         headers: { 
           ...corsHeaders, 
-          'Content-Type': 'application/json' 
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store'
         }, 
         status: 500 
       }
