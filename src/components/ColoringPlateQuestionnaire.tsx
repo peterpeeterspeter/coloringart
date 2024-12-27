@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -16,6 +16,7 @@ export const ColoringPlateQuestionnaire = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [submissionAttempted, setSubmissionAttempted] = useState(false);
+  const [isGenerationLocked, setIsGenerationLocked] = useState(false);
   const session = useSession();
   const navigate = useNavigate();
 
@@ -24,8 +25,19 @@ export const ColoringPlateQuestionnaire = () => {
     answers,
   });
 
+  // Reset generation lock after 30 seconds
+  useEffect(() => {
+    if (isGenerationLocked) {
+      const timer = setTimeout(() => {
+        setIsGenerationLocked(false);
+        setSubmissionAttempted(false);
+      }, 30000);
+      return () => clearTimeout(timer);
+    }
+  }, [isGenerationLocked]);
+
   const handleSubmit = async () => {
-    if (submissionAttempted) {
+    if (submissionAttempted || isGenerationLocked) {
       toast.error("Generation already in progress. Please wait or refresh the page to try again.");
       return;
     }
@@ -52,6 +64,7 @@ export const ColoringPlateQuestionnaire = () => {
 
     setIsSubmitting(true);
     setSubmissionAttempted(true);
+    setIsGenerationLocked(true);
 
     try {
       const imageUrl = await generateColoringPlate();
@@ -77,7 +90,8 @@ export const ColoringPlateQuestionnaire = () => {
     } catch (error) {
       console.error("Error creating coloring plate:", error);
       toast.error("Failed to create coloring plate. Please try again.");
-      setSubmissionAttempted(false); // Allow retry on error
+      setIsGenerationLocked(false);
+      setSubmissionAttempted(false);
     } finally {
       setIsSubmitting(false);
     }
