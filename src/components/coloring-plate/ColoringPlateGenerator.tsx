@@ -43,23 +43,47 @@ export const generateEnhancedPrompt = (basePrompt: string, answers: Record<strin
 export const useColoringPlateGenerator = ({ prompt, answers }: ColoringPlateGeneratorProps) => {
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationAttempts, setGenerationAttempts] = useState(0);
+  const MAX_ATTEMPTS = 3;
+  const GENERATION_TIMEOUT = 30000; // 30 seconds
 
   const generateColoringPlate = async (): Promise<string | null> => {
     if (isGenerating) {
       console.log("Generation already in progress, skipping...");
+      toast.error("Generation already in progress, please wait...");
+      return null;
+    }
+
+    if (generationAttempts >= MAX_ATTEMPTS) {
+      console.log("Maximum generation attempts reached");
+      toast.error("Maximum generation attempts reached. Please try again later.");
       return null;
     }
 
     try {
       setIsGenerating(true);
+      setGenerationAttempts(prev => prev + 1);
+      
       const enhancedPrompt = generateEnhancedPrompt(prompt, answers);
       console.log("Using enhanced prompt:", enhancedPrompt);
       
-      const { data, error } = await supabase.functions.invoke('generate-coloring-plate', {
+      // Create a timeout promise
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("Generation timed out")), GENERATION_TIMEOUT);
+      });
+
+      // Create the generation promise
+      const generationPromise = supabase.functions.invoke('generate-coloring-plate', {
         body: { 
           settings: { prompt: enhancedPrompt }
         }
       });
+
+      // Race between timeout and generation
+      const { data, error } = await Promise.race([
+        generationPromise,
+        timeoutPromise
+      ]) as any;
 
       if (error) {
         console.error("Error generating coloring plate:", error);
@@ -73,11 +97,18 @@ export const useColoringPlateGenerator = ({ prompt, answers }: ColoringPlateGene
       const imageUrl = data.output[0];
       console.log("Generation successful, received image URL:", imageUrl);
       setGeneratedImage(imageUrl);
+      setGenerationAttempts(0); // Reset attempts on success
       return imageUrl;
 
     } catch (error) {
       console.error("Error in coloring plate generation:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to generate coloring plate. Please try again.");
+      const errorMessage = error instanceof Error ? error.message : "Failed to generate coloring plate. Please try again.";
+      toast.error(errorMessage);
+      
+      if (error instanceof Error && error.message.includes("timed out")) {
+        toast.error("Generation timed out. Please try again.");
+      }
+      
       throw error;
     } finally {
       setIsGenerating(false);
@@ -88,5 +119,6 @@ export const useColoringPlateGenerator = ({ prompt, answers }: ColoringPlateGene
     generatedImage,
     isGenerating,
     generateColoringPlate,
+    generationAttempts,
   };
 };
