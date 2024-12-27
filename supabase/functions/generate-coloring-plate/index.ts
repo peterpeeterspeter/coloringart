@@ -24,8 +24,16 @@ serve(async (req) => {
       throw new Error("No prompt provided in settings")
     }
 
+    // Check if HUGGING_FACE_ACCESS_TOKEN is set
+    const hfToken = Deno.env.get('HUGGING_FACE_ACCESS_TOKEN')
+    if (!hfToken) {
+      console.error("HUGGING_FACE_ACCESS_TOKEN is not set")
+      throw new Error("Missing Hugging Face API token")
+    }
+
     // Initialize Hugging Face client with timeout
-    const hf = new HfInference(Deno.env.get('HUGGING_FACE_ACCESS_TOKEN'))
+    const hf = new HfInference(hfToken)
+    console.log("Initialized Hugging Face client")
     
     // Set a reasonable timeout for the API call
     const timeout = 25000 // 25 seconds

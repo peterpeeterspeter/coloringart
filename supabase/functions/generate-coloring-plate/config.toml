@@ -1,1 +1,4 @@
 project_id = "daeabxmadmvmgirzfmbe"
+
+[functions.generate-coloring-plate]
+verify_jwt = false
