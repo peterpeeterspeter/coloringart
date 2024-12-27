@@ -3,11 +3,12 @@ import { Home, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Tables } from "@/integrations/supabase/types";
 
 const Gallery = () => {
   const navigate = useNavigate();
 
-  const { data: pdfs, isLoading } = useQuery({
+  const { data: pdfs, isLoading } = useQuery<Tables['gallery_pdfs']['Row'][]>({
     queryKey: ['gallery-pdfs'],
     queryFn: async () => {
       const { data, error } = await supabase
