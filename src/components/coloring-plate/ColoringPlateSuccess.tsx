@@ -14,13 +14,19 @@ export const ColoringPlateSuccess = ({ imageUrl }: ColoringPlateSuccessProps) =>
     }
 
     try {
-      // Create a temporary link element
+      // Convert base64 to blob
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.href = imageUrl;
+      link.href = url;
       link.download = `coloring-plate-${Date.now()}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
       
       toast.success("Download started!");
     } catch (error) {

@@ -4,7 +4,6 @@ import { HfInference } from 'https://esm.sh/@huggingface/inference@2.3.2'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
 serve(async (req) => {
@@ -14,8 +13,14 @@ serve(async (req) => {
       return new Response(null, { headers: corsHeaders })
     }
 
-    const { settings, predictionId } = await req.json()
-    console.log("Received request with settings:", settings, "predictionId:", predictionId)
+    const { settings } = await req.json()
+    console.log("Received request with settings:", settings)
+
+    if (!settings?.prompt) {
+      throw new Error("No prompt provided in settings")
+    }
+
+    console.log("Starting image generation with prompt:", settings.prompt)
 
     // Initialize Hugging Face client
     const hf = new HfInference(Deno.env.get('HUGGING_FACE_ACCESS_TOKEN'))
@@ -23,36 +28,8 @@ serve(async (req) => {
       throw new Error("Failed to initialize Hugging Face client")
     }
 
-    // If predictionId is provided, check the status of an existing prediction
-    if (predictionId) {
-      console.log("Checking status for prediction:", predictionId)
-      return new Response(
-        JSON.stringify({
-          status: "succeeded",
-          output: ["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="]
-        }),
-        { 
-          headers: { 
-            ...corsHeaders, 
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-store'
-          } 
-        }
-      )
-    }
-
-    // Validate request
-    if (!settings?.prompt) {
-      throw new Error("No prompt provided in settings")
-    }
-
-    console.log("Starting image generation with prompt:", settings.prompt)
-
     try {
-      // Generate a unique ID for this request
-      const requestId = crypto.randomUUID()
-      
-      // Start the generation process
+      // Generate the image
       const response = await hf.textToImage({
         inputs: settings.prompt,
         model: "prithivMLmods/Coloring-Book-Flux-LoRA",
@@ -73,11 +50,10 @@ serve(async (req) => {
       const base64 = btoa(binary)
       const imageUrl = `data:image/png;base64,${base64}`
 
-      console.log("Successfully generated coloring plate with ID:", requestId)
+      console.log("Successfully generated coloring plate")
 
       return new Response(
         JSON.stringify({ 
-          id: requestId,
           status: "succeeded",
           output: [imageUrl] 
         }),
