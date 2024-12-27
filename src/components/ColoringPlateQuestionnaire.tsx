@@ -18,12 +18,17 @@ export const ColoringPlateQuestionnaire = () => {
   const session = useSession();
   const navigate = useNavigate();
 
-  const { generatedImage, generateColoringPlate } = useColoringPlateGenerator({
+  const { generatedImage, generateColoringPlate, isGenerating } = useColoringPlateGenerator({
     prompt,
     answers,
   });
 
   const handleSubmit = async () => {
+    if (isSubmitting || isGenerating) {
+      toast.error("Generation already in progress");
+      return;
+    }
+
     // Increment generation count
     const currentCount = parseInt(localStorage.getItem('generationCount') || '0');
     localStorage.setItem('generationCount', (currentCount + 1).toString());
@@ -43,6 +48,10 @@ export const ColoringPlateQuestionnaire = () => {
     try {
       const imageUrl = await generateColoringPlate();
       
+      if (!imageUrl) {
+        throw new Error("Failed to generate image");
+      }
+
       const { error } = await supabase.from("coloring_plates").insert({
         name,
         description,
@@ -86,7 +95,7 @@ export const ColoringPlateQuestionnaire = () => {
             onPromptChange={setPrompt}
             onAnswer={handleAnswer}
             onSubmit={handleSubmit}
-            isSubmitting={isSubmitting}
+            isSubmitting={isSubmitting || isGenerating}
           />
         ) : (
           <ColoringPlateSuccess
