@@ -26,7 +26,6 @@ serve(async (req) => {
     // If predictionId is provided, check the status of an existing prediction
     if (predictionId) {
       console.log("Checking status for prediction:", predictionId)
-      // For now, we'll simulate a successful response
       return new Response(
         JSON.stringify({
           status: "succeeded",

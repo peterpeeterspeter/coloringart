@@ -43,7 +43,6 @@ export const generateEnhancedPrompt = (basePrompt: string, answers: Record<strin
 export const useColoringPlateGenerator = ({ prompt, answers }: ColoringPlateGeneratorProps) => {
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [currentRequestId, setCurrentRequestId] = useState<string | null>(null);
 
   const generateColoringPlate = async () => {
     if (isGenerating) {
@@ -56,45 +55,32 @@ export const useColoringPlateGenerator = ({ prompt, answers }: ColoringPlateGene
       const enhancedPrompt = generateEnhancedPrompt(prompt, answers);
       console.log("Using enhanced prompt:", enhancedPrompt);
       
-      const { data: initialData, error: initialError } = await supabase.functions.invoke('generate-coloring-plate', {
-        body: { settings: { prompt: enhancedPrompt } }
+      const { data, error } = await supabase.functions.invoke('generate-coloring-plate', {
+        body: { 
+          settings: { prompt: enhancedPrompt }
+        }
       });
 
-      if (initialError) throw initialError;
-      console.log("Initial response:", initialData);
+      if (error) {
+        console.error("Error generating coloring plate:", error);
+        throw error;
+      }
 
-      setCurrentRequestId(initialData.id);
+      if (!data || !data.output || !data.output[0]) {
+        throw new Error("No image was generated");
+      }
 
-      const checkResult = async (predictionId: string): Promise<string> => {
-        const { data: statusData, error: statusError } = await supabase.functions.invoke('generate-coloring-plate', {
-          body: { predictionId }
-        });
-
-        if (statusError) throw statusError;
-        console.log("Status check response:", statusData);
-        
-        if (statusData.status === "succeeded") {
-          return statusData.output[0];
-        } else if (statusData.status === "failed") {
-          throw new Error("Image generation failed");
-        }
-        
-        // Add a delay between status checks
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        return checkResult(predictionId);
-      };
-
-      const imageUrl = await checkResult(initialData.id);
+      const imageUrl = data.output[0];
+      console.log("Generation successful, received image URL:", imageUrl);
       setGeneratedImage(imageUrl);
       return imageUrl;
 
     } catch (error) {
-      console.error("Error generating coloring plate:", error);
-      toast.error("Failed to generate coloring plate. Please try again.");
+      console.error("Error in coloring plate generation:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to generate coloring plate. Please try again.");
       throw error;
     } finally {
       setIsGenerating(false);
-      setCurrentRequestId(null);
     }
   };
 

@@ -14,29 +14,13 @@ export const ColoringPlateSuccess = ({ imageUrl }: ColoringPlateSuccessProps) =>
     }
 
     try {
-      // Remove the data URL prefix to get just the base64 data
-      const base64Data = imageUrl.replace(/^data:image\/\w+;base64,/, "");
-      
-      // Convert base64 to blob
-      const byteCharacters = atob(base64Data);
-      const byteNumbers = new Array(byteCharacters.length);
-      
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: 'image/png' });
-      
-      // Create download link
-      const url = window.URL.createObjectURL(blob);
+      // Create a temporary link element
       const link = document.createElement('a');
-      link.href = url;
+      link.href = imageUrl;
       link.download = `coloring-plate-${Date.now()}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
       
       toast.success("Download started!");
     } catch (error) {
