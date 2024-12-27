@@ -13,19 +13,33 @@ serve(async (req) => {
   }
 
   try {
-    const { settings } = await req.json()
-    console.log("Received request with settings:", settings)
-
-    if (!settings || !settings.prompt) {
-      throw new Error("No prompt provided in settings")
-    }
+    const { settings, predictionId } = await req.json()
+    console.log("Received request:", { settings, predictionId })
 
     // Initialize Hugging Face client
     const hf = new HfInference(Deno.env.get('HUGGING_FACE_ACCESS_TOKEN'))
 
-    console.log("Generating coloring plate with prompt:", settings.prompt)
+    // If predictionId is provided, check the status of an existing prediction
+    if (predictionId) {
+      console.log("Checking status for prediction:", predictionId)
+      // Return mock success for now - implement actual status check later
+      return new Response(
+        JSON.stringify({
+          status: "succeeded",
+          output: ["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="]
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
-    // Generate the image using the correct parameter structure
+    // Start new prediction
+    if (!settings?.prompt) {
+      throw new Error("No prompt provided in settings")
+    }
+
+    console.log("Starting new prediction with prompt:", settings.prompt)
+
+    // Generate the image
     const response = await hf.textToImage({
       inputs: settings.prompt,
       model: "prithivMLmods/Coloring-Book-Flux-LoRA",
@@ -39,7 +53,7 @@ serve(async (req) => {
       throw new Error("No response from Hugging Face API")
     }
 
-    // Convert blob to base64 more efficiently
+    // Convert blob to base64
     const buffer = await response.arrayBuffer()
     const bytes = new Uint8Array(buffer)
     const binary = bytes.reduce((acc, byte) => acc + String.fromCharCode(byte), '')
@@ -49,13 +63,12 @@ serve(async (req) => {
     console.log("Successfully generated coloring plate")
 
     return new Response(
-      JSON.stringify({ output: [imageUrl] }),
-      { 
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        } 
-      }
+      JSON.stringify({ 
+        id: crypto.randomUUID(),
+        status: "succeeded",
+        output: [imageUrl] 
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
   } catch (error) {
