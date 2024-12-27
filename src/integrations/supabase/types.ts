@@ -66,6 +66,36 @@ export type Database = {
         }
         Relationships: []
       }
+      gallery_pdfs: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          pdf_url: string
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          pdf_url: string
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          pdf_url?: string
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       mandala_jobs: {
         Row: {
           completed_at: string | null

@@ -3,7 +3,9 @@ import { Home, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Tables } from "@/integrations/supabase/types";
+import type { Database } from "@/integrations/supabase/types";
+
+type GalleryPDF = Database['public']['Tables']['gallery_pdfs']['Row'];
 
 const Gallery = () => {
   const navigate = useNavigate();
@@ -17,7 +19,7 @@ const Gallery = () => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as Tables['gallery_pdfs']['Row'][];
+      return data as GalleryPDF[];
     }
   });
 

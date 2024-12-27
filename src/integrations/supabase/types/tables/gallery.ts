@@ -8,8 +8,8 @@ export interface GalleryTypes {
       title: string
       description: string | null
       pdf_url: string
-      created_at: string
-      updated_at: string
+      created_at: string | null
+      updated_at: string | null
     }
     Insert: {
       id?: string
@@ -17,8 +17,8 @@ export interface GalleryTypes {
       title: string
       description?: string | null
       pdf_url: string
-      created_at?: string
-      updated_at?: string
+      created_at?: string | null
+      updated_at?: string | null
     }
     Update: {
       id?: string
@@ -26,8 +26,8 @@ export interface GalleryTypes {
       title?: string
       description?: string | null
       pdf_url?: string
-      created_at?: string
-      updated_at?: string
+      created_at?: string | null
+      updated_at?: string | null
     }
     Relationships: [
       {
