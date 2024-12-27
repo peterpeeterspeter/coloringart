@@ -91,7 +91,6 @@ export const ColoringPlateQuestionnaire = () => {
         ) : (
           <ColoringPlateSuccess
             imageUrl={generatedImage}
-            onDownload={() => {}} // Implement download functionality if needed
           />
         )}
       </Card>
