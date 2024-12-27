@@ -8,7 +8,7 @@ import { Tables } from "@/integrations/supabase/types";
 const Gallery = () => {
   const navigate = useNavigate();
 
-  const { data: pdfs, isLoading } = useQuery<Tables['gallery_pdfs']['Row'][]>({
+  const { data: pdfs, isLoading } = useQuery({
     queryKey: ['gallery-pdfs'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -17,7 +17,7 @@ const Gallery = () => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data;
+      return data as Tables['gallery_pdfs']['Row'][];
     }
   });
 
