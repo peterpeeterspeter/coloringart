@@ -27,7 +27,17 @@ export const generateEnhancedPrompt = (basePrompt: string, answers: Record<strin
     ? `. Style: ${enhancementParts.join(', ')}`
     : '';
 
-  return `Create a line art coloring page in black and white of: ${basePrompt}${enhancement}. Make it suitable for coloring with clear, well-defined lines. Negative prompt: shadows, gradient`;
+  const lineArtInstructions = `
+    Create a simple line art illustration with black lines on a white background, featuring: ${basePrompt}.
+    The design should have:
+    - No shadows
+    - No gradients
+    - No filled-in parts
+    The artwork should be composed of clean, bold lines, making it perfect for a coloring book.
+    Keep the design simple yet engaging, ensuring it's suitable for users to add their own colors and creativity.
+  `.trim();
+
+  return `${lineArtInstructions}${enhancement}. Make it suitable for coloring with clear, well-defined lines. Negative prompt: shadows, gradient, color, photorealistic, watermark, text, signature`;
 };
 
 export const useColoringPlateGenerator = ({ prompt, answers }: ColoringPlateGeneratorProps) => {
@@ -38,6 +48,7 @@ export const useColoringPlateGenerator = ({ prompt, answers }: ColoringPlateGene
     try {
       setIsGenerating(true);
       const enhancedPrompt = generateEnhancedPrompt(prompt, answers);
+      console.log("Using enhanced prompt:", enhancedPrompt);
       
       const { data: initialData, error: initialError } = await supabase.functions.invoke('generate-coloring-plate', {
         body: { settings: { prompt: enhancedPrompt } }
