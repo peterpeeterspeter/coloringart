@@ -15,7 +15,7 @@ serve(async (req) => {
     }
 
     const { settings, predictionId } = await req.json()
-    console.log("Received request with settings:", settings)
+    console.log("Received request with settings:", settings, "predictionId:", predictionId)
 
     // Initialize Hugging Face client
     const hf = new HfInference(Deno.env.get('HUGGING_FACE_ACCESS_TOKEN'))
@@ -26,6 +26,7 @@ serve(async (req) => {
     // If predictionId is provided, check the status of an existing prediction
     if (predictionId) {
       console.log("Checking status for prediction:", predictionId)
+      // For now, we'll simulate a successful response
       return new Response(
         JSON.stringify({
           status: "succeeded",
@@ -49,7 +50,10 @@ serve(async (req) => {
     console.log("Starting image generation with prompt:", settings.prompt)
 
     try {
-      // Generate the image
+      // Generate a unique ID for this request
+      const requestId = crypto.randomUUID()
+      
+      // Start the generation process
       const response = await hf.textToImage({
         inputs: settings.prompt,
         model: "prithivMLmods/Coloring-Book-Flux-LoRA",
@@ -70,11 +74,11 @@ serve(async (req) => {
       const base64 = btoa(binary)
       const imageUrl = `data:image/png;base64,${base64}`
 
-      console.log("Successfully generated coloring plate")
+      console.log("Successfully generated coloring plate with ID:", requestId)
 
       return new Response(
         JSON.stringify({ 
-          id: crypto.randomUUID(),
+          id: requestId,
           status: "succeeded",
           output: [imageUrl] 
         }),

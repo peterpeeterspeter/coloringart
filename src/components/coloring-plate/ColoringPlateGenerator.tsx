@@ -43,8 +43,14 @@ export const generateEnhancedPrompt = (basePrompt: string, answers: Record<strin
 export const useColoringPlateGenerator = ({ prompt, answers }: ColoringPlateGeneratorProps) => {
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [currentRequestId, setCurrentRequestId] = useState<string | null>(null);
 
   const generateColoringPlate = async () => {
+    if (isGenerating) {
+      console.log("Generation already in progress, skipping...");
+      return null;
+    }
+
     try {
       setIsGenerating(true);
       const enhancedPrompt = generateEnhancedPrompt(prompt, answers);
@@ -56,6 +62,8 @@ export const useColoringPlateGenerator = ({ prompt, answers }: ColoringPlateGene
 
       if (initialError) throw initialError;
       console.log("Initial response:", initialData);
+
+      setCurrentRequestId(initialData.id);
 
       const checkResult = async (predictionId: string): Promise<string> => {
         const { data: statusData, error: statusError } = await supabase.functions.invoke('generate-coloring-plate', {
@@ -71,6 +79,7 @@ export const useColoringPlateGenerator = ({ prompt, answers }: ColoringPlateGene
           throw new Error("Image generation failed");
         }
         
+        // Add a delay between status checks
         await new Promise(resolve => setTimeout(resolve, 1000));
         return checkResult(predictionId);
       };
@@ -85,6 +94,7 @@ export const useColoringPlateGenerator = ({ prompt, answers }: ColoringPlateGene
       throw error;
     } finally {
       setIsGenerating(false);
+      setCurrentRequestId(null);
     }
   };
 
