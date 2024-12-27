@@ -4,6 +4,7 @@ import { HfInference } from 'https://esm.sh/@huggingface/inference@2.3.2'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
 serve(async (req) => {
@@ -22,13 +23,17 @@ serve(async (req) => {
     // If predictionId is provided, check the status of an existing prediction
     if (predictionId) {
       console.log("Checking status for prediction:", predictionId)
-      // Return mock success for now - implement actual status check later
       return new Response(
         JSON.stringify({
           status: "succeeded",
           output: ["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="]
         }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json' 
+          } 
+        }
       )
     }
 
@@ -68,19 +73,28 @@ serve(async (req) => {
         status: "succeeded",
         output: [imageUrl] 
       }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
+        } 
+      }
     )
 
   } catch (error) {
-    console.error('Error in generate-coloring-plate function:', error)
+    console.error('Error:', error)
     return new Response(
       JSON.stringify({ 
-        error: 'Failed to generate coloring plate',
+        error: 'Failed to generate coloring plate', 
         details: error.message 
       }),
       { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        }, 
+        status: 500 
       }
     )
   }
