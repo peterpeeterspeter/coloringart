@@ -22,67 +22,129 @@ serve(async (req) => {
     }
 
     // Initialize Hugging Face client
-    const hf = new HfInference(Deno.env.get('HUGGING_FACE_ACCESS_TOKEN'))
+    const hfToken = Deno.env.get('HUGGING_FACE_ACCESS_TOKEN')
+    if (!hfToken) {
+      throw new Error("Missing Hugging Face API token")
+    }
+    
+    const hf = new HfInference(hfToken)
 
-    // Construct mandala prompt
-    const mandalaPrompt = `Create a beautiful mandala design with the following characteristics:
-      Style: ${settings.style || 'balanced and harmonious'}
-      Theme: ${settings.theme || 'spiritual and meditative'}
-      Make it a perfect mandala with intricate details and perfect symmetry.`
+    // Construct mandala prompt based on settings
+    let mandalaPrompt = "Create a beautiful mandala design"
+    
+    if (settings.emotions?.length > 0) {
+      mandalaPrompt += ` expressing ${settings.emotions.join(", ")}`
+    }
+    
+    if (settings.emotionalQuality) {
+      mandalaPrompt += ` with a focus on ${settings.emotionalQuality}`
+    }
+    
+    if (settings.emotionalIntensity) {
+      const intensity = parseInt(settings.emotionalIntensity)
+      if (intensity <= 3) {
+        mandalaPrompt += ", with gentle and subtle patterns"
+      } else if (intensity <= 7) {
+        mandalaPrompt += ", with balanced and moderate patterns"
+      } else {
+        mandalaPrompt += ", with bold and intense patterns"
+      }
+    }
+
+    mandalaPrompt += ". Make it a perfect mandala with intricate details and perfect symmetry."
 
     console.log("Using prompt:", mandalaPrompt)
 
-    // Generate the image
-    const response = await hf.textToImage({
-      inputs: mandalaPrompt,
-      model: "rexoscare/mandala-art-lora",
-      parameters: {
-        guidance_scale: 7.5,
-        num_inference_steps: 50
+    // Create an AbortController for timeout
+    const controller = new AbortController()
+    const timeout = setTimeout(() => {
+      controller.abort()
+      console.log("Generation timed out after 45 seconds")
+    }, 45000) // 45 second timeout
+
+    try {
+      // Generate the image with timeout
+      const response = await hf.textToImage({
+        inputs: mandalaPrompt,
+        model: "rexoscare/mandala-art-lora",
+        parameters: {
+          guidance_scale: 7.5,
+          num_inference_steps: 50,
+        }
+      }, { signal: controller.signal })
+
+      clearTimeout(timeout)
+
+      if (!response) {
+        throw new Error("No response from Hugging Face API")
       }
-    })
 
-    if (!response) {
-      throw new Error("No response from Hugging Face API")
-    }
+      // Convert blob to base64
+      const buffer = await response.arrayBuffer()
+      const bytes = new Uint8Array(buffer)
+      const binary = bytes.reduce((acc, byte) => acc + String.fromCharCode(byte), '')
+      const base64 = btoa(binary)
+      const imageUrl = `data:image/png;base64,${base64}`
 
-    // Convert blob to base64
-    const buffer = await response.arrayBuffer()
-    const bytes = new Uint8Array(buffer)
-    const binary = bytes.reduce((acc, byte) => acc + String.fromCharCode(byte), '')
-    const base64 = btoa(binary)
-    const imageUrl = `data:image/png;base64,${base64}`
+      console.log("Successfully generated mandala")
 
-    console.log("Successfully generated mandala")
-
-    // Update the job with the generated image URL
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-    
-    if (jobId) {
-      const supabase = createClient(supabaseUrl!, supabaseKey!)
-      await supabase
-        .from('mandala_jobs')
-        .update({ 
-          status: 'completed',
-          image_url: imageUrl,
-          completed_at: new Date().toISOString()
-        })
-        .eq('id', jobId)
-    }
-
-    return new Response(
-      JSON.stringify({ output: [imageUrl] }),
-      { 
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        } 
+      // Update the job with the generated image URL if jobId is provided
+      if (jobId) {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL')
+        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+        
+        if (supabaseUrl && supabaseKey) {
+          const supabase = createClient(supabaseUrl, supabaseKey)
+          await supabase
+            .from('mandala_jobs')
+            .update({ 
+              status: 'completed',
+              image_url: imageUrl,
+              completed_at: new Date().toISOString()
+            })
+            .eq('id', jobId)
+        }
       }
-    )
+
+      return new Response(
+        JSON.stringify({ output: [imageUrl] }),
+        { 
+          headers: { 
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          } 
+        }
+      )
+
+    } catch (apiError) {
+      console.error("Hugging Face API error:", apiError)
+      const errorMessage = apiError.name === 'AbortError' 
+        ? 'Generation timed out after 45 seconds. Please try again.'
+        : `Hugging Face API error: ${apiError.message}`
+      throw new Error(errorMessage)
+    }
 
   } catch (error) {
     console.error('Error in generate-mandala function:', error)
+    
+    // If there's a jobId, update the job with the error
+    if (jobId) {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+      
+      if (supabaseUrl && supabaseKey) {
+        const supabase = createClient(supabaseUrl, supabaseKey)
+        await supabase
+          .from('mandala_jobs')
+          .update({ 
+            status: 'error',
+            error: error.message,
+            completed_at: new Date().toISOString()
+          })
+          .eq('id', jobId)
+      }
+    }
+
     return new Response(
       JSON.stringify({ 
         error: 'Failed to generate mandala',
