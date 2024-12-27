@@ -59,9 +59,12 @@ export const useMandalaGenerator = ({ answers }: MandalaGeneratorProps) => {
 
       console.log("Job created successfully:", job);
 
-      // Generate the mandala
+      // Generate the mandala using the edge function
       const { data, error } = await supabase.functions.invoke('generate-mandala', {
-        body: { settings, jobId: job.id }
+        body: { 
+          settings,
+          jobId: job.id 
+        }
       });
 
       if (error) {
