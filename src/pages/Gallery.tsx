@@ -1,9 +1,41 @@
 import { Button } from "@/components/ui/button";
-import { Home } from "lucide-react";
+import { Home, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const Gallery = () => {
   const navigate = useNavigate();
+
+  const { data: pdfs, isLoading } = useQuery({
+    queryKey: ['gallery-pdfs'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('gallery_pdfs')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  const handleDownload = async (pdfUrl: string, title: string) => {
+    try {
+      const response = await fetch(pdfUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${title}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-[#FFF8F0]">
@@ -39,39 +71,74 @@ const Gallery = () => {
           Coloring Gallery
         </h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {[
-            {
-              url: "/lovable-uploads/16597c91-0047-43ff-b8ec-a27a1b449c42.png",
-              title: "Bird in Leaf Frame",
-              pages: "12"
-            },
-            {
-              url: "/lovable-uploads/3494b801-54fc-4fe4-ad69-ff539b6e9d4a.png",
-              title: "Rose Mandala",
-              pages: "8"
-            },
-            {
-              url: "/lovable-uploads/c9eaccba-8754-4ba9-a3ee-0f6a5e82988e.png",
-              title: "Cat in Kimono",
-              pages: "15"
-            },
-            {
-              url: "/lovable-uploads/4764d9fe-d0bf-4753-a82b-570a8026f2d1.png",
-              title: "Geometric Mandala",
-              pages: "10"
-            }
-          ].map((image, index) => (
-            <div 
-              key={index} 
-              className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow"
-            >
-              <img src={image.url} alt={image.title} className="w-full h-64 object-contain mb-4" />
-              <h3 className="font-semibold text-lg">{image.title}</h3>
-              <p className="text-sm text-gray-500">{image.pages} Pages</p>
-            </div>
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="flex justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Regular Images */}
+            {[
+              {
+                url: "/lovable-uploads/16597c91-0047-43ff-b8ec-a27a1b449c42.png",
+                title: "Bird in Leaf Frame",
+                pages: "12"
+              },
+              {
+                url: "/lovable-uploads/3494b801-54fc-4fe4-ad69-ff539b6e9d4a.png",
+                title: "Rose Mandala",
+                pages: "8"
+              },
+              {
+                url: "/lovable-uploads/c9eaccba-8754-4ba9-a3ee-0f6a5e82988e.png",
+                title: "Cat in Kimono",
+                pages: "15"
+              },
+              {
+                url: "/lovable-uploads/4764d9fe-d0bf-4753-a82b-570a8026f2d1.png",
+                title: "Geometric Mandala",
+                pages: "10"
+              }
+            ].map((image, index) => (
+              <div 
+                key={index} 
+                className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+              >
+                <img src={image.url} alt={image.title} className="w-full h-64 object-contain mb-4" />
+                <h3 className="font-semibold text-lg">{image.title}</h3>
+                <p className="text-sm text-gray-500">{image.pages} Pages</p>
+              </div>
+            ))}
+
+            {/* PDFs */}
+            {pdfs?.map((pdf) => (
+              <div 
+                key={pdf.id} 
+                className="bg-white p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow"
+              >
+                <div className="relative">
+                  {/* PDF Preview (first page as image) */}
+                  <img 
+                    src={`${pdf.pdf_url.replace('.pdf', '_preview.png')}`} 
+                    alt={pdf.title} 
+                    className="w-full h-64 object-contain mb-4" 
+                  />
+                  <Button
+                    className="absolute bottom-2 right-2 bg-primary hover:bg-primary/90"
+                    onClick={() => handleDownload(pdf.pdf_url, pdf.title)}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download PDF
+                  </Button>
+                </div>
+                <h3 className="font-semibold text-lg">{pdf.title}</h3>
+                {pdf.description && (
+                  <p className="text-sm text-gray-500">{pdf.description}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
