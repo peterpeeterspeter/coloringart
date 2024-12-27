@@ -43,9 +43,8 @@ export const generateEnhancedPrompt = (basePrompt: string, answers: Record<strin
 export const useColoringPlateGenerator = ({ prompt, answers }: ColoringPlateGeneratorProps) => {
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const maxRetries = 2;
 
-  const generateColoringPlate = async (retryCount = 0): Promise<string | null> => {
+  const generateColoringPlate = async (): Promise<string | null> => {
     if (isGenerating) {
       console.log("Generation already in progress, skipping...");
       return null;
@@ -64,15 +63,6 @@ export const useColoringPlateGenerator = ({ prompt, answers }: ColoringPlateGene
 
       if (error) {
         console.error("Error generating coloring plate:", error);
-        
-        // Check if it's a worker limit error and we haven't exceeded max retries
-        if (error.message?.includes('WORKER_LIMIT') && retryCount < maxRetries) {
-          console.log(`Retrying generation (attempt ${retryCount + 1} of ${maxRetries})...`);
-          // Wait for 2 seconds before retrying
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          return generateColoringPlate(retryCount + 1);
-        }
-        
         throw error;
       }
 

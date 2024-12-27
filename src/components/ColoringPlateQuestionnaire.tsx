@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -16,7 +16,7 @@ export const ColoringPlateQuestionnaire = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [submissionAttempted, setSubmissionAttempted] = useState(false);
-  const [isGenerationLocked, setIsGenerationLocked] = useState(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
   const session = useSession();
   const navigate = useNavigate();
 
@@ -25,25 +25,18 @@ export const ColoringPlateQuestionnaire = () => {
     answers,
   });
 
-  // Reset generation lock after 30 seconds
+  // Cleanup function to abort any pending requests
   useEffect(() => {
-    if (isGenerationLocked) {
-      const timer = setTimeout(() => {
-        setIsGenerationLocked(false);
-        setSubmissionAttempted(false);
-      }, 30000);
-      return () => clearTimeout(timer);
-    }
-  }, [isGenerationLocked]);
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   const handleSubmit = async () => {
-    if (submissionAttempted || isGenerationLocked) {
+    if (submissionAttempted || isGenerating || isSubmitting) {
       toast.error("Generation already in progress. Please wait or refresh the page to try again.");
-      return;
-    }
-
-    if (isSubmitting || isGenerating) {
-      toast.error("Generation already in progress");
       return;
     }
 
@@ -62,9 +55,14 @@ export const ColoringPlateQuestionnaire = () => {
       return;
     }
 
+    // Create new AbortController for this submission
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+
     setIsSubmitting(true);
     setSubmissionAttempted(true);
-    setIsGenerationLocked(true);
 
     try {
       const imageUrl = await generateColoringPlate();
@@ -90,10 +88,12 @@ export const ColoringPlateQuestionnaire = () => {
     } catch (error) {
       console.error("Error creating coloring plate:", error);
       toast.error("Failed to create coloring plate. Please try again.");
-      setIsGenerationLocked(false);
       setSubmissionAttempted(false);
     } finally {
       setIsSubmitting(false);
+      if (abortControllerRef.current) {
+        abortControllerRef.current = null;
+      }
     }
   };
 
