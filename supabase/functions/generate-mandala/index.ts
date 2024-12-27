@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 import { HfInference } from 'https://esm.sh/@huggingface/inference@2.3.2'
 
 const corsHeaders = {
@@ -14,20 +13,23 @@ serve(async (req) => {
   }
 
   try {
-    const { settings, jobId } = await req.json()
-    console.log("Received request with settings:", settings, "and jobId:", jobId)
+    const { settings } = await req.json()
+    console.log("Received request with settings:", settings)
+
+    if (!settings) {
+      throw new Error("No settings provided")
+    }
 
     // Initialize Hugging Face client
     const hf = new HfInference(Deno.env.get('HUGGING_FACE_ACCESS_TOKEN'))
-    
-    // Create the mandala prompt
-    const mandalaPrompt = `Create a beautiful mandala design with the following characteristics: ${
-      Object.entries(settings)
-        .map(([key, value]) => `${key}: ${value}`)
-        .join(', ')
-    }. Style: Create a detailed mandala line art in black and white, perfect for coloring. The design should be symmetrical and intricate.`
 
-    console.log("Generated prompt:", mandalaPrompt)
+    // Construct mandala prompt
+    const mandalaPrompt = `Create a beautiful mandala design with the following characteristics:
+      Style: ${settings.style || 'balanced and harmonious'}
+      Theme: ${settings.theme || 'spiritual and meditative'}
+      Make it a perfect mandala with intricate details and perfect symmetry.`
+
+    console.log("Using prompt:", mandalaPrompt)
 
     // Generate the image
     const image = await hf.textToImage({
@@ -43,34 +45,8 @@ serve(async (req) => {
     const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
     const imageUrl = `data:image/png;base64,${base64}`
 
-    // Initialize Supabase client
-    const supabaseAdmin = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
-
-    // Update the job with the generated image
-    if (jobId) {
-      const { error: updateError } = await supabaseAdmin
-        .from('mandala_jobs')
-        .update({
-          status: 'completed',
-          image_url: imageUrl,
-          completed_at: new Date().toISOString()
-        })
-        .eq('id', jobId)
-
-      if (updateError) {
-        console.error("Error updating job:", updateError)
-        throw updateError
-      }
-    }
-
     return new Response(
-      JSON.stringify({ 
-        status: 'succeeded',
-        output: [imageUrl]
-      }),
+      JSON.stringify({ imageUrl }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 

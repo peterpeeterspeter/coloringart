@@ -16,14 +16,24 @@ serve(async (req) => {
     const { settings, predictionId } = await req.json()
     console.log("Received request:", { settings, predictionId })
 
-    // Initialize Hugging Face client
-    const hf = new HfInference(Deno.env.get('HUGGING_FACE_ACCESS_TOKEN'))
-    
+    // If predictionId is provided, return success since we're using direct generation now
+    if (predictionId) {
+      return new Response(
+        JSON.stringify({ 
+          status: 'succeeded',
+          output: [settings.imageUrl] 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     if (!settings?.prompt) {
       throw new Error("No prompt provided");
     }
 
-    // Generate the image
+    // Initialize Hugging Face client
+    const hf = new HfInference(Deno.env.get('HUGGING_FACE_ACCESS_TOKEN'))
+    
     console.log("Generating image with prompt:", settings.prompt);
     const image = await hf.textToImage({
       inputs: settings.prompt,
@@ -40,6 +50,7 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({ 
+        id: crypto.randomUUID(),
         status: 'succeeded',
         output: [imageUrl]
       }),
