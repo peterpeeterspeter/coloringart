@@ -43,25 +43,15 @@ export const generateEnhancedPrompt = (basePrompt: string, answers: Record<strin
 export const useColoringPlateGenerator = ({ prompt, answers }: ColoringPlateGeneratorProps) => {
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generationAttempts, setGenerationAttempts] = useState(0);
-  const MAX_ATTEMPTS = 3;
 
   const generateColoringPlate = async (): Promise<string | null> => {
     if (isGenerating) {
       console.log("Generation already in progress, skipping...");
-      toast.error("Generation already in progress, please wait...");
-      return null;
-    }
-
-    if (generationAttempts >= MAX_ATTEMPTS) {
-      console.log("Maximum generation attempts reached");
-      toast.error("Maximum generation attempts reached. Please try again later.");
       return null;
     }
 
     try {
       setIsGenerating(true);
-      setGenerationAttempts(prev => prev + 1);
       
       const enhancedPrompt = generateEnhancedPrompt(prompt, answers);
       console.log("Using enhanced prompt:", enhancedPrompt);
@@ -84,14 +74,13 @@ export const useColoringPlateGenerator = ({ prompt, answers }: ColoringPlateGene
       const imageUrl = data.output[0];
       console.log("Generation successful, received image URL:", imageUrl);
       setGeneratedImage(imageUrl);
-      setGenerationAttempts(0); // Reset attempts on success
       return imageUrl;
 
     } catch (error) {
       console.error("Error in coloring plate generation:", error);
       const errorMessage = error instanceof Error ? error.message : "Failed to generate coloring plate. Please try again.";
       toast.error(errorMessage);
-      throw error;
+      return null;
     } finally {
       setIsGenerating(false);
     }
@@ -101,6 +90,5 @@ export const useColoringPlateGenerator = ({ prompt, answers }: ColoringPlateGene
     generatedImage,
     isGenerating,
     generateColoringPlate,
-    generationAttempts,
   };
 };

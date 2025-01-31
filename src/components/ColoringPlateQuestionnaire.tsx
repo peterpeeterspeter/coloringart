@@ -15,7 +15,6 @@ export const ColoringPlateQuestionnaire = () => {
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const generationLockRef = useRef(false);
   const session = useSession();
   const navigate = useNavigate();
 
@@ -24,42 +23,40 @@ export const ColoringPlateQuestionnaire = () => {
     answers,
   });
 
-  // Reset generation lock and cleanup on unmount
-  useEffect(() => {
-    return () => {
-      generationLockRef.current = false;
-    };
-  }, []);
-
   const handleSubmit = async () => {
-    if (generationLockRef.current || isGenerating || isSubmitting) {
-      toast.error("Generation already in progress. Please wait or refresh the page to try again.");
+    if (isGenerating || isSubmitting) {
+      toast.error("Generation already in progress. Please wait...");
       return;
     }
 
-    // Increment generation count
-    const currentCount = parseInt(localStorage.getItem('generationCount') || '0');
-    localStorage.setItem('generationCount', (currentCount + 1).toString());
+    // Basic validation
+    if (!name.trim() || !prompt.trim()) {
+      toast.error("Please provide a name and prompt for your coloring plate");
+      return;
+    }
 
+    // Check generation count for anonymous users
+    const currentCount = parseInt(localStorage.getItem('generationCount') || '0');
     if (!session?.user?.id && currentCount >= 9) {
       toast.error("You've reached your 10 free generations limit. Please sign in to continue.");
       navigate("/auth");
       return;
     }
 
-    if (!name.trim() || !prompt.trim()) {
-      toast.error("Please provide a name and prompt for your coloring plate");
-      return;
-    }
-
-    generationLockRef.current = true;
-    setIsSubmitting(true);
-
     try {
+      setIsSubmitting(true);
+      localStorage.setItem('generationCount', (currentCount + 1).toString());
+
       const imageUrl = await generateColoringPlate();
       
       if (!imageUrl) {
         throw new Error("Failed to generate image");
+      }
+
+      if (!session?.user?.id) {
+        setIsSuccess(true);
+        toast.success("Your coloring plate has been created");
+        return;
       }
 
       const { error } = await supabase.from("coloring_plates").insert({
@@ -79,7 +76,6 @@ export const ColoringPlateQuestionnaire = () => {
     } catch (error) {
       console.error("Error creating coloring plate:", error);
       toast.error("Failed to create coloring plate. Please try again.");
-      generationLockRef.current = false;
     } finally {
       setIsSubmitting(false);
     }
