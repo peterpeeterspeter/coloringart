@@ -18,11 +18,11 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt } = await req.json()
-    console.log("Received request with prompt:", prompt)
+    const { settings } = await req.json()
+    console.log("Received request with settings:", settings)
 
-    if (!prompt) {
-      throw new Error("No prompt provided")
+    if (!settings?.prompt) {
+      throw new Error("No prompt provided in settings")
     }
 
     // Check if HUGGING_FACE_ACCESS_TOKEN is set
@@ -37,7 +37,7 @@ serve(async (req) => {
     console.log("Initialized Hugging Face client")
     
     try {
-      console.log("Starting image generation with prompt:", prompt)
+      console.log("Starting image generation with prompt:", settings.prompt)
       
       // Create an AbortController for timeout
       const controller = new AbortController()
@@ -48,7 +48,7 @@ serve(async (req) => {
 
       // Generate the image with timeout
       const response = await hf.textToImage({
-        inputs: prompt,
+        inputs: settings.prompt,
         model: "prithivMLmods/Coloring-Book-Flux-LoRA",
         parameters: {
           guidance_scale: 7.5,
@@ -74,7 +74,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           status: "succeeded",
-          image: imageUrl 
+          output: [imageUrl] 
         }),
         { 
           headers: { 

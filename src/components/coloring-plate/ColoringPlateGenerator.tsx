@@ -68,7 +68,7 @@ export const useColoringPlateGenerator = ({ prompt, answers }: ColoringPlateGene
 
       const { data, error } = await supabase.functions.invoke('generate-coloring-plate', {
         body: { 
-          prompt: enhancedPrompt // Changed from settings to prompt
+          settings: { prompt: enhancedPrompt }
         }
       });
 
@@ -77,11 +77,11 @@ export const useColoringPlateGenerator = ({ prompt, answers }: ColoringPlateGene
         throw error;
       }
 
-      if (!data?.image) { // Changed from data.output[0] to data.image
+      if (!data || !data.output || !data.output[0]) {
         throw new Error("No image was generated");
       }
 
-      const imageUrl = data.image;
+      const imageUrl = data.output[0];
       console.log("Generation successful, received image URL:", imageUrl);
       setGeneratedImage(imageUrl);
       setGenerationAttempts(0); // Reset attempts on success
