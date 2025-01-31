@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -44,7 +44,7 @@ export const useColoringPlateGenerator = ({ prompt, answers }: ColoringPlateGene
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const generateColoringPlate = async (): Promise<string | null> => {
+  const generateColoringPlate = useCallback(async (): Promise<string | null> => {
     if (isGenerating) {
       console.log("Generation already in progress, skipping...");
       return null;
@@ -85,7 +85,7 @@ export const useColoringPlateGenerator = ({ prompt, answers }: ColoringPlateGene
     } finally {
       setIsGenerating(false);
     }
-  };
+  }, [prompt, answers, isGenerating]);
 
   return {
     generatedImage,

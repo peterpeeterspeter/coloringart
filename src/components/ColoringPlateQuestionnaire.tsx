@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -31,7 +31,7 @@ export const ColoringPlateQuestionnaire = () => {
     };
   }, []);
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     // Prevent multiple submissions
     if (isGenerating || isSubmitting) {
       console.log("Generation or submission already in progress");
@@ -92,14 +92,14 @@ export const ColoringPlateQuestionnaire = () => {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [isGenerating, isSubmitting, name, prompt, session, answers, navigate, generateColoringPlate]);
 
-  const handleAnswer = (questionId: string, value: string | string[]) => {
+  const handleAnswer = useCallback((questionId: string, value: string | string[]) => {
     setAnswers(prev => ({
       ...prev,
       [questionId]: value
     }));
-  };
+  }, []);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
