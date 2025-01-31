@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -23,9 +23,18 @@ export const ColoringPlateQuestionnaire = () => {
     answers,
   });
 
+  // Reset states when component unmounts
+  useEffect(() => {
+    return () => {
+      setIsSubmitting(false);
+      setIsSuccess(false);
+    };
+  }, []);
+
   const handleSubmit = async () => {
+    // Prevent multiple submissions
     if (isGenerating || isSubmitting) {
-      toast.error("Generation already in progress. Please wait...");
+      console.log("Generation or submission already in progress");
       return;
     }
 
@@ -35,30 +44,34 @@ export const ColoringPlateQuestionnaire = () => {
       return;
     }
 
-    // Check generation count for anonymous users
-    const currentCount = parseInt(localStorage.getItem('generationCount') || '0');
-    if (!session?.user?.id && currentCount >= 9) {
-      toast.error("You've reached your 10 free generations limit. Please sign in to continue.");
-      navigate("/auth");
-      return;
-    }
-
     try {
+      console.log("Starting coloring plate generation...");
       setIsSubmitting(true);
-      localStorage.setItem('generationCount', (currentCount + 1).toString());
 
+      // Check generation count for anonymous users
+      const currentCount = parseInt(localStorage.getItem('generationCount') || '0');
+      if (!session?.user?.id && currentCount >= 9) {
+        toast.error("You've reached your 10 free generations limit. Please sign in to continue.");
+        navigate("/auth");
+        return;
+      }
+
+      // Generate the coloring plate
       const imageUrl = await generateColoringPlate();
       
       if (!imageUrl) {
         throw new Error("Failed to generate image");
       }
 
+      // Update generation count for anonymous users
       if (!session?.user?.id) {
+        localStorage.setItem('generationCount', (currentCount + 1).toString());
         setIsSuccess(true);
         toast.success("Your coloring plate has been created");
         return;
       }
 
+      // Save to database for authenticated users
       const { error } = await supabase.from("coloring_plates").insert({
         name,
         description,

@@ -52,6 +52,7 @@ export const useColoringPlateGenerator = ({ prompt, answers }: ColoringPlateGene
 
     try {
       setIsGenerating(true);
+      console.log("Starting generation with prompt:", prompt);
       
       const enhancedPrompt = generateEnhancedPrompt(prompt, answers);
       console.log("Using enhanced prompt:", enhancedPrompt);
