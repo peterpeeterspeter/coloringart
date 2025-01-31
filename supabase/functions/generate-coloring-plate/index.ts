@@ -5,11 +5,10 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Max-Age': '86400',
 }
 
 serve(async (req) => {
-  // Always handle CORS preflight requests first
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { 
       headers: corsHeaders,
@@ -85,10 +84,9 @@ serve(async (req) => {
       )
     } catch (apiError) {
       console.error("Hugging Face API error:", apiError)
-      const errorMessage = apiError.name === 'AbortError' 
+      throw new Error(apiError.name === 'AbortError' 
         ? 'Generation timed out after 45 seconds. Please try again.'
-        : `Hugging Face API error: ${apiError.message}`
-      throw new Error(errorMessage)
+        : `Hugging Face API error: ${apiError.message}`)
     }
 
   } catch (error) {
