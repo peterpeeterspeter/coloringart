@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { HfInference } from 'https://esm.sh/@huggingface/inference@2.3.2'
 
@@ -49,18 +50,19 @@ serve(async (req) => {
     const hf = new HfInference(hfToken)
     console.log("Starting image generation with prompt:", settings.prompt)
     
+    // Increase timeout to 50 seconds
     const controller = new AbortController()
     const timeout = setTimeout(() => {
       controller.abort()
-    }, 25000) // 25 second timeout
+    }, 50000)
 
     try {
       const response = await hf.textToImage({
-        inputs: `${settings.prompt}. Style: black and white line art, coloring book style, clean bold lines, no shadows, no gradients, no colors, no text, no watermarks.`,
-        model: "renderartist/coloringbookflux",
+        inputs: settings.prompt,
+        model: "runwayml/stable-diffusion-v1-5",
         parameters: {
-          guidance_scale: 6.0,
-          num_inference_steps: 20,
+          guidance_scale: 7.5,
+          num_inference_steps: 50
         }
       }, {
         signal: controller.signal
