@@ -1,2 +1,4 @@
 project_id = "daeabxmadmvmgirzfmbe"
+
+[functions.generate-mandala]
 verify_jwt = false
