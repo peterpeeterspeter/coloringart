@@ -38,14 +38,7 @@ serve(async (req) => {
     try {
       console.log("Starting image generation with prompt:", settings.prompt)
       
-      // Create an AbortController for timeout
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => {
-        controller.abort()
-        console.log("Generation timed out after 45 seconds")
-      }, 45000)
-
-      // Generate the image with timeout
+      // Generate the image
       const response = await hf.textToImage({
         inputs: settings.prompt,
         model: "renderartist/coloringbookflux",
@@ -54,8 +47,6 @@ serve(async (req) => {
           num_inference_steps: 30,
         }
       })
-
-      clearTimeout(timeoutId)
 
       if (!response) {
         throw new Error("No response from Hugging Face API")
