@@ -40,10 +40,10 @@ serve(async (req) => {
       
       // Create an AbortController for timeout
       const controller = new AbortController()
-      const timeout = setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         controller.abort()
         console.log("Generation timed out after 45 seconds")
-      }, 45000) // 45 second timeout
+      }, 45000)
 
       // Generate the image with timeout
       const response = await hf.textToImage({
@@ -53,9 +53,9 @@ serve(async (req) => {
           guidance_scale: 7.5,
           num_inference_steps: 30,
         }
-      }, { signal: controller.signal })
+      })
 
-      clearTimeout(timeout)
+      clearTimeout(timeoutId)
 
       if (!response) {
         throw new Error("No response from Hugging Face API")
