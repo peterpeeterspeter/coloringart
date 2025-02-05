@@ -54,17 +54,14 @@ serve(async (req) => {
 
       // Convert blob to base64
       const buffer = await response.arrayBuffer()
-      const bytes = new Uint8Array(buffer)
-      const binary = bytes.reduce((acc, byte) => acc + String.fromCharCode(byte), '')
-      const base64 = btoa(binary)
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)))
       const imageUrl = `data:image/png;base64,${base64}`
 
       console.log("Successfully generated coloring plate")
 
       return new Response(
         JSON.stringify({ 
-          status: "succeeded",
-          output: [imageUrl] 
+          output: [imageUrl]
         }),
         { 
           headers: { 
