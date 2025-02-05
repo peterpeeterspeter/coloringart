@@ -55,12 +55,16 @@ serve(async (req) => {
     const timeout = setTimeout(() => controller.abort(), 30000)
 
     try {
+      // Add the trigger words and style instructions to the prompt
+      const enhancedPrompt = `coloring book page, c0l0ringb00k, ${settings.prompt}, white background, black line art, high contrast, clean lines`
+
       const response = await hf.textToImage({
-        inputs: settings.prompt,
-        model: "stabilityai/sdxl-turbo",  // Switch to faster model
+        inputs: enhancedPrompt,
+        model: "renderartist/coloringbookflux",
         parameters: {
-          num_inference_steps: 1, // Minimum steps for speed
-          guidance_scale: 7.5
+          num_inference_steps: 30,
+          guidance_scale: 7.5,
+          sampler: "deis"  // As recommended in the model documentation
         }
       }, {
         signal: controller.signal,
