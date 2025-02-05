@@ -16,8 +16,8 @@ serve(async (req) => {
     console.log("Starting mandala generation request")
     
     // Parse request body
-    const { settings } = await req.json()
-    console.log("Received settings:", settings)
+    const { settings, jobId } = await req.json()
+    console.log("Received settings:", settings, "jobId:", jobId)
 
     if (!settings) {
       throw new Error("No settings provided")
