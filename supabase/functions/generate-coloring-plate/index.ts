@@ -6,7 +6,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Max-Age': '86400',
-  'Content-Type': 'application/json',
 }
 
 serve(async (req) => {
@@ -29,7 +28,7 @@ serve(async (req) => {
         JSON.stringify({ error: "No prompt provided in settings" }),
         { 
           status: 400,
-          headers: corsHeaders
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       )
     }
@@ -41,7 +40,7 @@ serve(async (req) => {
         JSON.stringify({ error: "Server configuration error" }),
         { 
           status: 500,
-          headers: corsHeaders
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       )
     }
@@ -50,6 +49,11 @@ serve(async (req) => {
     const hf = new HfInference(hfToken)
     console.log("Starting image generation with prompt:", settings.prompt)
     
+    const controller = new AbortController()
+    const timeout = setTimeout(() => {
+      controller.abort()
+    }, 25000) // 25 second timeout
+
     try {
       const response = await hf.textToImage({
         inputs: settings.prompt,
@@ -59,7 +63,11 @@ serve(async (req) => {
           guidance_scale: 6.0,
           num_inference_steps: 20,
         }
+      }, {
+        signal: controller.signal
       })
+
+      clearTimeout(timeout)
 
       if (!response) {
         console.error("No response received from image generation service")
@@ -67,7 +75,7 @@ serve(async (req) => {
           JSON.stringify({ error: "No response from image generation service" }),
           { 
             status: 500,
-            headers: corsHeaders
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           }
         )
       }
@@ -80,10 +88,13 @@ serve(async (req) => {
       console.log("Successfully generated coloring plate")
       return new Response(
         JSON.stringify({ output: [imageUrl] }),
-        { headers: corsHeaders }
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
       )
 
     } catch (apiError) {
+      clearTimeout(timeout)
       console.error("Image generation service error:", apiError)
       return new Response(
         JSON.stringify({ 
@@ -92,7 +103,7 @@ serve(async (req) => {
         }),
         { 
           status: 500,
-          headers: corsHeaders
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       )
     }
@@ -106,7 +117,7 @@ serve(async (req) => {
       }),
       { 
         status: 500,
-        headers: corsHeaders
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     )
   }
