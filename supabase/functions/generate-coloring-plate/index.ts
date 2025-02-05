@@ -35,19 +35,17 @@ serve(async (req) => {
 
     // Initialize Hugging Face client
     const hf = new HfInference(hfToken)
-    console.log("Initialized Hugging Face client")
+    console.log("Starting image generation with prompt:", settings.prompt)
     
     try {
-      console.log("Starting image generation with prompt:", settings.prompt)
-      
       // Generate the image with optimized parameters
       const response = await hf.textToImage({
         inputs: settings.prompt,
         model: "renderartist/coloringbookflux",
         parameters: {
           negative_prompt: "shadows, gradient, color, photorealistic, watermark, text, signature",
-          guidance_scale: 7.0,
-          num_inference_steps: 30,
+          guidance_scale: 6.0,  // Reduced from 7.0
+          num_inference_steps: 20,  // Reduced from 30
         }
       })
 
