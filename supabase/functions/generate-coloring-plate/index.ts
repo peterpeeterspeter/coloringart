@@ -50,9 +50,9 @@ serve(async (req) => {
     const hf = new HfInference(hfToken)
     console.log("Starting image generation with prompt:", settings.prompt)
     
-    // Create an AbortController with 30 second timeout
+    // Create an AbortController with 50 second timeout
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 30000)
+    const timeout = setTimeout(() => controller.abort(), 50000)
 
     try {
       // Add the trigger words and style instructions to the prompt
@@ -68,7 +68,8 @@ serve(async (req) => {
         }
       }, {
         signal: controller.signal,
-        retries: 2
+        retries: 3,
+        timeout: 45000
       })
 
       clearTimeout(timeout)
