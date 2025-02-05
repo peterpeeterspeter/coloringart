@@ -56,10 +56,9 @@ serve(async (req) => {
 
     try {
       const response = await hf.textToImage({
-        inputs: settings.prompt,
+        inputs: `${settings.prompt}. Style: black and white line art, coloring book style, clean bold lines, no shadows, no gradients, no colors, no text, no watermarks.`,
         model: "renderartist/coloringbookflux",
         parameters: {
-          negative_prompt: "shadows, gradient, color, photorealistic, watermark, text, signature",
           guidance_scale: 6.0,
           num_inference_steps: 20,
         }
