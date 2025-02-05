@@ -14,19 +14,13 @@ export const ColoringPlateSuccess = ({ imageUrl }: ColoringPlateSuccessProps) =>
     }
 
     try {
-      // Convert base64 to blob
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-      
-      // Create download link
-      const url = window.URL.createObjectURL(blob);
+      // For base64 images, we can create a download link directly
       const link = document.createElement('a');
-      link.href = url;
+      link.href = imageUrl;
       link.download = `coloring-plate-${Date.now()}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
       
       toast.success("Download started!");
     } catch (error) {
@@ -77,6 +71,10 @@ export const ColoringPlateSuccess = ({ imageUrl }: ColoringPlateSuccessProps) =>
             src={imageUrl}
             alt="Generated coloring plate"
             className="w-full h-auto rounded-lg"
+            onError={(e) => {
+              console.error("Error loading image:", e);
+              toast.error("Error displaying the generated image");
+            }}
           />
         </div>
       </div>
