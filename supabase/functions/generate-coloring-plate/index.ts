@@ -19,10 +19,12 @@ serve(async (req) => {
   }
 
   try {
+    console.log("Received request")
     const { settings } = await req.json()
-    console.log("Received request with settings:", settings)
+    console.log("Request settings:", settings)
 
     if (!settings?.prompt) {
+      console.error("No prompt provided in settings")
       return new Response(
         JSON.stringify({ error: "No prompt provided in settings" }),
         { 
@@ -32,7 +34,6 @@ serve(async (req) => {
       )
     }
 
-    // Check if HUGGING_FACE_ACCESS_TOKEN is set
     const hfToken = Deno.env.get('HUGGING_FACE_ACCESS_TOKEN')
     if (!hfToken) {
       console.error("HUGGING_FACE_ACCESS_TOKEN is not set")
@@ -45,12 +46,11 @@ serve(async (req) => {
       )
     }
 
-    // Initialize Hugging Face client
+    console.log("Initializing Hugging Face client")
     const hf = new HfInference(hfToken)
     console.log("Starting image generation with prompt:", settings.prompt)
     
     try {
-      // Generate the image with optimized parameters
       const response = await hf.textToImage({
         inputs: settings.prompt,
         model: "renderartist/coloringbookflux",
@@ -72,13 +72,12 @@ serve(async (req) => {
         )
       }
 
-      // Convert blob to base64
+      console.log("Successfully generated image, converting to base64")
       const buffer = await response.arrayBuffer()
       const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)))
       const imageUrl = `data:image/png;base64,${base64}`
 
       console.log("Successfully generated coloring plate")
-
       return new Response(
         JSON.stringify({ output: [imageUrl] }),
         { headers: corsHeaders }
