@@ -4,7 +4,6 @@ import { HfInference } from 'https://esm.sh/@huggingface/inference@2.3.2'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Content-Type': 'application/json'
 }
 
@@ -12,11 +11,7 @@ serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, {
-      status: 204,
-      headers: {
-        ...corsHeaders,
-        'Access-Control-Max-Age': '86400',
-      }
+      headers: corsHeaders
     })
   }
 
@@ -40,27 +35,32 @@ serve(async (req) => {
     console.log("Initializing Hugging Face client")
     const hf = new HfInference(hfToken)
 
-    // Create a simple prompt based on settings
-    const mandalaPrompt = "Generate a simple mandala with clean lines and geometric patterns"
+    // Create a specialized mandala prompt
+    const basePrompt = "black and white mandala coloring page, clean lines, high contrast, white background"
+    const stylePrompt = settings.style ? `, ${settings.style}` : ""
+    const themePrompt = settings.theme ? `, ${settings.theme}` : ""
+    const mandalaPrompt = `${basePrompt}${stylePrompt}${themePrompt}, line art, coloring book style`
+    
     console.log("Using prompt:", mandalaPrompt)
 
-    // Create an AbortController with a timeout
+    // Create an AbortController with timeout
     const controller = new AbortController()
     const timeout = setTimeout(() => {
       controller.abort()
       console.log("Generation timed out")
-    }, 8000) // 8 second timeout
+    }, 15000) // 15 second timeout for better quality
 
     try {
       console.log("Starting image generation")
       const response = await hf.textToImage({
         inputs: mandalaPrompt,
-        model: "stabilityai/stable-diffusion-2-1", // Using a more stable model
+        model: "gokaygokay/Flux-Mandala-LoRA",
         parameters: {
           guidance_scale: 7.5,
-          num_inference_steps: 8, // Reduced steps for faster generation
-          width: 512,  // Fixed size to reduce memory usage
-          height: 512
+          num_inference_steps: 20,
+          width: 768,
+          height: 768,
+          negative_prompt: "color, colored, realistic, photographic, 3d, shading"
         }
       }, { signal: controller.signal })
 
