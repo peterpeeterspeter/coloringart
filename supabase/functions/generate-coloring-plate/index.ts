@@ -50,35 +50,27 @@ serve(async (req) => {
     const hf = new HfInference(hfToken)
     console.log("Starting image generation with prompt:", settings.prompt)
     
-    // Increase timeout to 50 seconds
+    // Create an AbortController with 30 second timeout
     const controller = new AbortController()
-    const timeout = setTimeout(() => {
-      controller.abort()
-    }, 50000)
+    const timeout = setTimeout(() => controller.abort(), 30000)
 
     try {
       const response = await hf.textToImage({
         inputs: settings.prompt,
-        model: "runwayml/stable-diffusion-v1-5",
+        model: "stabilityai/sdxl-turbo",  // Switch to faster model
         parameters: {
-          guidance_scale: 7.5,
-          num_inference_steps: 50
+          num_inference_steps: 1, // Minimum steps for speed
+          guidance_scale: 7.5
         }
       }, {
-        signal: controller.signal
+        signal: controller.signal,
+        retries: 2
       })
 
       clearTimeout(timeout)
 
       if (!response) {
-        console.error("No response received from image generation service")
-        return new Response(
-          JSON.stringify({ error: "No response from image generation service" }),
-          { 
-            status: 500,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-          }
-        )
+        throw new Error("No response from image generation service")
       }
 
       console.log("Successfully generated image, converting to base64")
