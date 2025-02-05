@@ -45,47 +45,40 @@ serve(async (req) => {
     
     console.log("Using prompt:", mandalaPrompt)
 
-    try {
-      console.log("Starting image generation")
-      const response = await hf.textToImage({
-        inputs: mandalaPrompt,
-        model: "gokaygokay/Flux-Mandala-LoRA",
-        parameters: {
-          guidance_scale: 7.5,
-          num_inference_steps: 20,
-          width: 768,
-          height: 768
-        }
-      })
-
-      console.log("Image generation completed")
-
-      if (!response) {
-        throw new Error("No response from Hugging Face API")
+    // Generate the image
+    console.log("Starting image generation")
+    const response = await hf.textToImage({
+      inputs: mandalaPrompt,
+      model: "gokaygokay/Flux-Mandala-LoRA",
+      parameters: {
+        guidance_scale: 7.5,
+        num_inference_steps: 20
       }
+    })
 
-      // Convert blob to base64
-      const buffer = await response.arrayBuffer()
-      const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)))
-      const imageUrl = `data:image/png;base64,${base64}`
+    console.log("Image generation completed")
 
-      return new Response(
-        JSON.stringify({ 
-          success: true,
-          output: [imageUrl] 
-        }),
-        { 
-          headers: { 
-            ...corsHeaders,
-            'Cache-Control': 'no-store'
-          }
-        }
-      )
-
-    } catch (apiError) {
-      console.error("API error:", apiError)
-      throw new Error(`API error: ${apiError.message}`)
+    if (!response) {
+      throw new Error("No response from Hugging Face API")
     }
+
+    // Convert blob to base64
+    const buffer = await response.arrayBuffer()
+    const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)))
+    const imageUrl = `data:image/png;base64,${base64}`
+
+    return new Response(
+      JSON.stringify({ 
+        success: true,
+        output: [imageUrl] 
+      }),
+      { 
+        headers: { 
+          ...corsHeaders,
+          'Cache-Control': 'no-store'
+        }
+      }
+    )
 
   } catch (error) {
     console.error('Error:', error)
