@@ -6,13 +6,15 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Max-Age': '86400',
+  'Content-Type': 'application/json',
 }
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, {
-      headers: corsHeaders,
+      status: 204,
+      headers: corsHeaders
     })
   }
 
@@ -25,10 +27,7 @@ serve(async (req) => {
         JSON.stringify({ error: "No prompt provided in settings" }),
         { 
           status: 400,
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json',
-          }
+          headers: corsHeaders
         }
       )
     }
@@ -41,10 +40,7 @@ serve(async (req) => {
         JSON.stringify({ error: "Server configuration error" }),
         { 
           status: 500,
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json',
-          }
+          headers: corsHeaders
         }
       )
     }
@@ -66,14 +62,12 @@ serve(async (req) => {
       })
 
       if (!response) {
+        console.error("No response received from image generation service")
         return new Response(
           JSON.stringify({ error: "No response from image generation service" }),
           { 
-            headers: {
-              ...corsHeaders,
-              'Content-Type': 'application/json',
-            },
-            status: 500
+            status: 500,
+            headers: corsHeaders
           }
         )
       }
@@ -87,15 +81,11 @@ serve(async (req) => {
 
       return new Response(
         JSON.stringify({ output: [imageUrl] }),
-        { 
-          headers: { 
-            ...corsHeaders, 
-            'Content-Type': 'application/json',
-          } 
-        }
+        { headers: corsHeaders }
       )
+
     } catch (apiError) {
-      console.error("Hugging Face API error:", apiError)
+      console.error("Image generation service error:", apiError)
       return new Response(
         JSON.stringify({ 
           error: "Image generation service error", 
@@ -103,10 +93,7 @@ serve(async (req) => {
         }),
         { 
           status: 500,
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json',
-          }
+          headers: corsHeaders
         }
       )
     }
@@ -119,11 +106,8 @@ serve(async (req) => {
         details: error.message 
       }),
       { 
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json',
-        }, 
-        status: 500 
+        status: 500,
+        headers: corsHeaders
       }
     )
   }
