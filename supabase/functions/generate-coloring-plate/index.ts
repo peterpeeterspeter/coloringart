@@ -7,7 +7,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Max-Age': '86400',
-  'Access-Control-Expose-Headers': '*'
+  'Access-Control-Expose-Headers': '*',
+  'Content-Type': 'application/json'
 }
 
 serve(async (req) => {
@@ -30,7 +31,7 @@ serve(async (req) => {
         JSON.stringify({ error: "No prompt provided in settings" }),
         { 
           status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          headers: corsHeaders
         }
       )
     }
@@ -42,7 +43,7 @@ serve(async (req) => {
         JSON.stringify({ error: "Server configuration error" }),
         { 
           status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          headers: corsHeaders
         }
       )
     }
@@ -51,9 +52,9 @@ serve(async (req) => {
     const hf = new HfInference(hfToken)
     console.log("Starting image generation with prompt:", settings.prompt)
     
-    // Create an AbortController with 30 second timeout
+    // Create an AbortController with 40 second timeout
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 30000)
+    const timeout = setTimeout(() => controller.abort(), 40000)
 
     try {
       // Add the trigger words and style instructions to the prompt
@@ -63,13 +64,13 @@ serve(async (req) => {
         inputs: enhancedPrompt,
         model: "renderartist/coloringbookflux",
         parameters: {
-          num_inference_steps: 20,
+          num_inference_steps: 25,
           guidance_scale: 7.5
         }
       }, {
         signal: controller.signal,
-        retries: 2,
-        timeout: 25000
+        retries: 3,
+        timeout: 35000
       })
 
       clearTimeout(timeout)
@@ -86,9 +87,7 @@ serve(async (req) => {
       console.log("Successfully generated coloring plate")
       return new Response(
         JSON.stringify({ output: [imageUrl] }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
+        { headers: corsHeaders }
       )
 
     } catch (apiError) {
@@ -101,7 +100,7 @@ serve(async (req) => {
         }),
         { 
           status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          headers: corsHeaders
         }
       )
     }
@@ -115,7 +114,7 @@ serve(async (req) => {
       }),
       { 
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: corsHeaders
       }
     )
   }
