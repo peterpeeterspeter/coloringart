@@ -45,11 +45,12 @@ serve(async (req) => {
         console.log("Generation timed out after 45 seconds")
       }, 45000) // 45 second timeout
 
-      // Generate the image with timeout
+      // Generate the image with timeout using the new model
       const response = await hf.textToImage({
         inputs: settings.prompt,
-        model: "prithivMLmods/Coloring-Book-Flux-LoRA",
+        model: "renderartist/coloringbookflux",
         parameters: {
+          negative_prompt: "shadows, gradient, color, photorealistic, watermark, text, signature",
           guidance_scale: 7.5,
           num_inference_steps: 30,
         }
