@@ -54,8 +54,7 @@ serve(async (req) => {
           guidance_scale: 7.5,
           num_inference_steps: 20,
           width: 768,
-          height: 768,
-          negative_prompt: "color, colored, realistic, photographic, 3d, shading"
+          height: 768
         }
       })
 
