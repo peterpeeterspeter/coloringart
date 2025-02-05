@@ -65,7 +65,7 @@ export const useColoringPlateGenerator = ({ prompt, answers }: ColoringPlateGene
 
       if (error) {
         console.error("Error generating coloring plate:", error);
-        throw error;
+        throw new Error(`Failed to generate coloring plate: ${error.message}`);
       }
 
       if (!data || !data.output || !data.output[0]) {
@@ -81,7 +81,7 @@ export const useColoringPlateGenerator = ({ prompt, answers }: ColoringPlateGene
       console.error("Error in coloring plate generation:", error);
       const errorMessage = error instanceof Error ? error.message : "Failed to generate coloring plate. Please try again.";
       toast.error(errorMessage);
-      return null;
+      throw error;
     } finally {
       setIsGenerating(false);
     }

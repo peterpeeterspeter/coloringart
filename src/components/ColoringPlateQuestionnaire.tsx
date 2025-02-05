@@ -7,6 +7,7 @@ import { ColoringPlateForm } from "./coloring-plate/ColoringPlateForm";
 import { ColoringPlateSuccess } from "./coloring-plate/ColoringPlateSuccess";
 import { useNavigate } from "react-router-dom";
 import { useColoringPlateGenerator } from "./coloring-plate/ColoringPlateGenerator";
+import { Loader2 } from "lucide-react";
 
 export const ColoringPlateQuestionnaire = () => {
   const [name, setName] = useState("");
@@ -15,6 +16,7 @@ export const ColoringPlateQuestionnaire = () => {
   const [answers, setAnswers] = useState<Record<string, string | string[]>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const session = useSession();
   const navigate = useNavigate();
 
@@ -28,6 +30,7 @@ export const ColoringPlateQuestionnaire = () => {
     return () => {
       setIsSubmitting(false);
       setIsSuccess(false);
+      setError(null);
     };
   }, []);
 
@@ -37,6 +40,9 @@ export const ColoringPlateQuestionnaire = () => {
       console.log("Generation or submission already in progress");
       return;
     }
+
+    // Reset error state
+    setError(null);
 
     // Basic validation
     if (!name.trim() || !prompt.trim()) {
@@ -72,7 +78,7 @@ export const ColoringPlateQuestionnaire = () => {
       }
 
       // Save to database for authenticated users
-      const { error } = await supabase.from("coloring_plates").insert({
+      const { error: dbError } = await supabase.from("coloring_plates").insert({
         name,
         description,
         prompt,
@@ -81,13 +87,14 @@ export const ColoringPlateQuestionnaire = () => {
         user_id: session.user.id,
       });
 
-      if (error) throw error;
+      if (dbError) throw dbError;
 
       setIsSuccess(true);
       toast.success("Your coloring plate has been created");
       
     } catch (error) {
       console.error("Error creating coloring plate:", error);
+      setError(error.message || "Failed to create coloring plate. Please try again.");
       toast.error("Failed to create coloring plate. Please try again.");
     } finally {
       setIsSubmitting(false);
@@ -100,6 +107,39 @@ export const ColoringPlateQuestionnaire = () => {
       [questionId]: value
     }));
   }, []);
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Card className="w-full max-w-4xl p-6 space-y-8 animate-fade-in">
+          <div className="text-center space-y-4">
+            <h2 className="text-2xl font-bold text-red-500">Error</h2>
+            <p className="text-gray-600">{error}</p>
+            <button 
+              onClick={() => setError(null)}
+              className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90"
+            >
+              Try Again
+            </button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  if (isSubmitting || isGenerating) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Card className="w-full max-w-4xl p-6 space-y-8 animate-fade-in">
+          <div className="text-center space-y-4">
+            <Loader2 className="w-12 h-12 animate-spin mx-auto text-primary" />
+            <h2 className="text-2xl font-bold text-primary">Generating Your Coloring Plate</h2>
+            <p className="text-gray-600">Please wait while we create your custom coloring plate...</p>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
