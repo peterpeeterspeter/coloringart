@@ -30,7 +30,16 @@ serve(async (req) => {
     const hfToken = Deno.env.get('HUGGING_FACE_ACCESS_TOKEN')
     if (!hfToken) {
       console.error("HUGGING_FACE_ACCESS_TOKEN is not set")
-      throw new Error("Missing Hugging Face API token")
+      return new Response(
+        JSON.stringify({ error: "Missing Hugging Face API token" }),
+        { 
+          status: 500,
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+          }
+        }
+      )
     }
 
     // Initialize Hugging Face client
@@ -71,7 +80,19 @@ serve(async (req) => {
       )
     } catch (apiError) {
       console.error("Hugging Face API error:", apiError)
-      throw new Error(`Hugging Face API error: ${apiError.message}`)
+      return new Response(
+        JSON.stringify({ 
+          error: "Hugging Face API error", 
+          details: apiError.message 
+        }),
+        { 
+          status: 500,
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+          }
+        }
+      )
     }
 
   } catch (error) {
