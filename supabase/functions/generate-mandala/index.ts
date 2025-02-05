@@ -6,16 +6,30 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Max-Age': '86400',
 }
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response(null, {
+      status: 204,
+      headers: corsHeaders
+    })
   }
 
   try {
-    const { settings, jobId } = await req.json()
+    // Parse request body
+    let reqBody;
+    try {
+      reqBody = await req.json()
+    } catch (e) {
+      console.error("Failed to parse request body:", e)
+      throw new Error("Invalid request body")
+    }
+
+    const { settings, jobId } = reqBody
     console.log("Received request with settings:", settings)
 
     if (!settings) {
@@ -56,12 +70,12 @@ serve(async (req) => {
 
     console.log("Using prompt:", mandalaPrompt)
 
-    // Create an AbortController with a shorter timeout
+    // Create an AbortController with a timeout
     const controller = new AbortController()
     const timeout = setTimeout(() => {
       controller.abort()
-      console.log("Generation timed out after 30 seconds")
-    }, 30000) // 30 second timeout
+      console.log("Generation timed out after 25 seconds")
+    }, 25000) // 25 second timeout
 
     try {
       // Generate the image with timeout
@@ -70,7 +84,7 @@ serve(async (req) => {
         model: "rexoscare/mandala-art-lora",
         parameters: {
           guidance_scale: 7.5,
-          num_inference_steps: 30, // Reduced steps for faster generation
+          num_inference_steps: 25, // Reduced steps for faster generation
         }
       }, { signal: controller.signal })
 
@@ -120,7 +134,7 @@ serve(async (req) => {
     } catch (apiError) {
       console.error("Hugging Face API error:", apiError)
       const errorMessage = apiError.name === 'AbortError' 
-        ? 'Generation timed out after 30 seconds. Please try again.'
+        ? 'Generation timed out after 25 seconds. Please try again.'
         : `Hugging Face API error: ${apiError.message}`
       throw new Error(errorMessage)
     }
@@ -152,8 +166,11 @@ serve(async (req) => {
         details: error.message 
       }),
       { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500
+        status: 500,
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
       }
     )
   }
