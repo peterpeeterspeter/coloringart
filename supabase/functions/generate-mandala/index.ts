@@ -12,28 +12,25 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 204,
-      headers: corsHeaders
-    })
-  }
-
   try {
+    // Handle CORS preflight requests first
+    if (req.method === 'OPTIONS') {
+      return new Response(null, {
+        status: 204,
+        headers: corsHeaders
+      })
+    }
+
     console.log("Starting mandala generation request")
     
     // Parse request body
-    let reqBody;
-    try {
-      reqBody = await req.json()
-    } catch (e) {
+    const reqBody = await req.json().catch(e => {
       console.error("Failed to parse request body:", e)
       throw new Error("Invalid request body")
-    }
+    })
 
     const { settings, jobId } = reqBody
-    console.log("Received request with settings:", settings)
+    console.log("Received settings:", settings)
 
     if (!settings) {
       throw new Error("No settings provided")
@@ -48,17 +45,8 @@ serve(async (req) => {
     console.log("Initializing Hugging Face client")
     const hf = new HfInference(hfToken)
 
-    // Construct simpler mandala prompt for better performance
-    let mandalaPrompt = "Generate a simple mandala with clean lines and minimal detail, perfect for coloring"
-    
-    if (settings.emotions?.length > 0) {
-      mandalaPrompt += `, expressing ${settings.emotions.join(", ")}`
-    }
-    
-    if (settings.emotionalQuality) {
-      mandalaPrompt += `, with ${settings.emotionalQuality}`
-    }
-
+    // Simple prompt for better performance
+    const mandalaPrompt = "Generate a simple mandala with clean lines"
     console.log("Using prompt:", mandalaPrompt)
 
     // Create an AbortController with a shorter timeout
@@ -66,17 +54,16 @@ serve(async (req) => {
     const timeout = setTimeout(() => {
       controller.abort()
       console.log("Generation timed out")
-    }, 20000) // 20 second timeout
+    }, 15000) // 15 second timeout
 
     try {
       console.log("Starting image generation")
-      // Generate the image with timeout
       const response = await hf.textToImage({
         inputs: mandalaPrompt,
         model: "rexoscare/mandala-art-lora",
         parameters: {
           guidance_scale: 7.5,
-          num_inference_steps: 20, // Further reduced steps
+          num_inference_steps: 15, // Reduced steps for faster generation
         }
       }, { signal: controller.signal })
 
@@ -89,28 +76,27 @@ serve(async (req) => {
 
       // Convert blob to base64
       const buffer = await response.arrayBuffer()
-      const bytes = new Uint8Array(buffer)
-      const binary = bytes.reduce((acc, byte) => acc + String.fromCharCode(byte), '')
-      const base64 = btoa(binary)
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)))
       const imageUrl = `data:image/png;base64,${base64}`
 
-      // Update the job with the generated image URL if jobId is provided
       if (jobId) {
-        console.log("Updating job status in database")
+        console.log("Updating job status")
         const supabaseUrl = Deno.env.get('SUPABASE_URL')
         const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
         
-        if (supabaseUrl && supabaseKey) {
-          const supabase = createClient(supabaseUrl, supabaseKey)
-          await supabase
-            .from('mandala_jobs')
-            .update({ 
-              status: 'completed',
-              image_url: imageUrl,
-              completed_at: new Date().toISOString()
-            })
-            .eq('id', jobId)
+        if (!supabaseUrl || !supabaseKey) {
+          throw new Error("Missing Supabase credentials")
         }
+
+        const supabase = createClient(supabaseUrl, supabaseKey)
+        await supabase
+          .from('mandala_jobs')
+          .update({ 
+            status: 'completed',
+            image_url: imageUrl,
+            completed_at: new Date().toISOString()
+          })
+          .eq('id', jobId)
       }
 
       return new Response(
@@ -119,31 +105,35 @@ serve(async (req) => {
       )
 
     } catch (apiError) {
-      console.error("Hugging Face API error:", apiError)
       clearTimeout(timeout)
+      console.error("API error:", apiError)
       throw new Error(apiError.name === 'AbortError' 
         ? 'Generation timed out. Please try again.'
-        : `Hugging Face API error: ${apiError.message}`)
+        : `API error: ${apiError.message}`)
     }
 
   } catch (error) {
-    console.error('Error in generate-mandala function:', error)
+    console.error('Error:', error)
     
     // If there's a jobId, update the job with the error
-    if (jobId) {
-      const supabaseUrl = Deno.env.get('SUPABASE_URL')
-      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-      
-      if (supabaseUrl && supabaseKey) {
-        const supabase = createClient(supabaseUrl, supabaseKey)
-        await supabase
-          .from('mandala_jobs')
-          .update({ 
-            status: 'error',
-            error: error.message,
-            completed_at: new Date().toISOString()
-          })
-          .eq('id', jobId)
+    if (reqBody?.jobId) {
+      try {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL')
+        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+        
+        if (supabaseUrl && supabaseKey) {
+          const supabase = createClient(supabaseUrl, supabaseKey)
+          await supabase
+            .from('mandala_jobs')
+            .update({ 
+              status: 'error',
+              error: error.message,
+              completed_at: new Date().toISOString()
+            })
+            .eq('id', reqBody.jobId)
+        }
+      } catch (dbError) {
+        console.error('Failed to update job status:', dbError)
       }
     }
 
