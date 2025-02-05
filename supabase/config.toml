@@ -2,6 +2,3 @@ project_id = "daeabxmadmvmgirzfmbe"
 
 [functions.generate-coloring-plate]
 verify_jwt = false
-
-[functions.generate-mandala]
-verify_jwt = false
