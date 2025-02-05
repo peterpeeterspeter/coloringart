@@ -34,14 +34,14 @@ serve(async (req) => {
     try {
       console.log("Starting image generation with prompt:", settings.prompt)
       
-      // Generate the image
+      // Generate the image with optimized parameters
       const response = await hf.textToImage({
         inputs: settings.prompt,
         model: "renderartist/coloringbookflux",
         parameters: {
           negative_prompt: "shadows, gradient, color, photorealistic, watermark, text, signature",
-          guidance_scale: 7.5,
-          num_inference_steps: 50,
+          guidance_scale: 7.0,
+          num_inference_steps: 30,
         }
       })
 
