@@ -8,6 +8,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Max-Age': '86400',
+  'Content-Type': 'application/json'
 }
 
 serve(async (req) => {
@@ -20,6 +21,8 @@ serve(async (req) => {
   }
 
   try {
+    console.log("Starting mandala generation request")
+    
     // Parse request body
     let reqBody;
     try {
@@ -42,53 +45,43 @@ serve(async (req) => {
       throw new Error("Missing Hugging Face API token")
     }
     
+    console.log("Initializing Hugging Face client")
     const hf = new HfInference(hfToken)
 
-    // Construct mandala prompt based on settings
-    let mandalaPrompt = "Create a beautiful mandala design with clear, well-defined lines"
+    // Construct simpler mandala prompt for better performance
+    let mandalaPrompt = "Generate a simple mandala with clean lines and minimal detail, perfect for coloring"
     
     if (settings.emotions?.length > 0) {
-      mandalaPrompt += ` expressing ${settings.emotions.join(", ")}`
+      mandalaPrompt += `, expressing ${settings.emotions.join(", ")}`
     }
     
     if (settings.emotionalQuality) {
-      mandalaPrompt += ` with a focus on ${settings.emotionalQuality}`
+      mandalaPrompt += `, with ${settings.emotionalQuality}`
     }
-    
-    if (settings.emotionalIntensity) {
-      const intensity = parseInt(settings.emotionalIntensity)
-      if (intensity <= 3) {
-        mandalaPrompt += ", with gentle and subtle patterns"
-      } else if (intensity <= 7) {
-        mandalaPrompt += ", with balanced and moderate patterns"
-      } else {
-        mandalaPrompt += ", with bold and intense patterns"
-      }
-    }
-
-    mandalaPrompt += ". Make it a perfect mandala with intricate details and perfect symmetry."
 
     console.log("Using prompt:", mandalaPrompt)
 
-    // Create an AbortController with a timeout
+    // Create an AbortController with a shorter timeout
     const controller = new AbortController()
     const timeout = setTimeout(() => {
       controller.abort()
-      console.log("Generation timed out after 25 seconds")
-    }, 25000) // 25 second timeout
+      console.log("Generation timed out")
+    }, 20000) // 20 second timeout
 
     try {
+      console.log("Starting image generation")
       // Generate the image with timeout
       const response = await hf.textToImage({
         inputs: mandalaPrompt,
         model: "rexoscare/mandala-art-lora",
         parameters: {
           guidance_scale: 7.5,
-          num_inference_steps: 25, // Reduced steps for faster generation
+          num_inference_steps: 20, // Further reduced steps
         }
       }, { signal: controller.signal })
 
       clearTimeout(timeout)
+      console.log("Image generation completed")
 
       if (!response) {
         throw new Error("No response from Hugging Face API")
@@ -101,10 +94,9 @@ serve(async (req) => {
       const base64 = btoa(binary)
       const imageUrl = `data:image/png;base64,${base64}`
 
-      console.log("Successfully generated mandala")
-
       // Update the job with the generated image URL if jobId is provided
       if (jobId) {
+        console.log("Updating job status in database")
         const supabaseUrl = Deno.env.get('SUPABASE_URL')
         const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
         
@@ -123,20 +115,15 @@ serve(async (req) => {
 
       return new Response(
         JSON.stringify({ output: [imageUrl] }),
-        { 
-          headers: { 
-            ...corsHeaders,
-            'Content-Type': 'application/json'
-          } 
-        }
+        { headers: corsHeaders }
       )
 
     } catch (apiError) {
       console.error("Hugging Face API error:", apiError)
-      const errorMessage = apiError.name === 'AbortError' 
-        ? 'Generation timed out after 25 seconds. Please try again.'
-        : `Hugging Face API error: ${apiError.message}`
-      throw new Error(errorMessage)
+      clearTimeout(timeout)
+      throw new Error(apiError.name === 'AbortError' 
+        ? 'Generation timed out. Please try again.'
+        : `Hugging Face API error: ${apiError.message}`)
     }
 
   } catch (error) {
@@ -167,10 +154,7 @@ serve(async (req) => {
       }),
       { 
         status: 500,
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
+        headers: corsHeaders
       }
     )
   }
