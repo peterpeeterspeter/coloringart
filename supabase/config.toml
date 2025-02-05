@@ -1,5 +1,4 @@
-
 project_id = "daeabxmadmvmgirzfmbe"
 
-[functions.generate-coloring-plate]
+[functions.generate-mandala]
 verify_jwt = false
