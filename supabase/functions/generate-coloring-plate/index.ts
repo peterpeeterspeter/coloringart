@@ -4,16 +4,12 @@ import { HfInference } from 'https://esm.sh/@huggingface/inference@2.3.2'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { 
-      headers: corsHeaders,
-      status: 204
-    })
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
@@ -43,8 +39,9 @@ serve(async (req) => {
         inputs: settings.prompt,
         model: "renderartist/coloringbookflux",
         parameters: {
+          negative_prompt: "shadows, gradient, color, photorealistic, watermark, text, signature",
           guidance_scale: 7.5,
-          num_inference_steps: 30,
+          num_inference_steps: 50,
         }
       })
 
@@ -60,9 +57,7 @@ serve(async (req) => {
       console.log("Successfully generated coloring plate")
 
       return new Response(
-        JSON.stringify({ 
-          output: [imageUrl]
-        }),
+        JSON.stringify({ output: [imageUrl] }),
         { 
           headers: { 
             ...corsHeaders, 
