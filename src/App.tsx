@@ -57,12 +57,20 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  // Allow access if authenticated or if under 10 generations
+  // Allow access if authenticated OR if under 10 generations
   if (isAuthenticated || generationCount < 10) {
     return children;
   }
 
-  return <Navigate to="/auth" />;
+  // Only redirect to auth if user has used all their free generations
+  return (
+    <Navigate 
+      to="/auth" 
+      state={{ 
+        message: "You've used all your free generations. Please sign in to continue creating." 
+      }} 
+    />
+  );
 };
 
 const App = () => (
