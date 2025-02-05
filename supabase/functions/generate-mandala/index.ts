@@ -7,29 +7,23 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Max-Age': '86400',
   'Content-Type': 'application/json'
 }
 
 serve(async (req) => {
-  try {
-    // Handle CORS preflight requests first
-    if (req.method === 'OPTIONS') {
-      return new Response(null, {
-        status: 204,
-        headers: corsHeaders
-      })
-    }
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
+      headers: corsHeaders
+    })
+  }
 
+  try {
     console.log("Starting mandala generation request")
     
     // Parse request body
-    const reqBody = await req.json().catch(e => {
-      console.error("Failed to parse request body:", e)
-      throw new Error("Invalid request body")
-    })
-
-    const { settings, jobId } = reqBody
+    const { settings, jobId } = await req.json()
     console.log("Received settings:", settings)
 
     if (!settings) {
@@ -54,7 +48,7 @@ serve(async (req) => {
     const timeout = setTimeout(() => {
       controller.abort()
       console.log("Generation timed out")
-    }, 15000) // 15 second timeout
+    }, 12000) // 12 second timeout
 
     try {
       console.log("Starting image generation")
@@ -63,7 +57,7 @@ serve(async (req) => {
         model: "rexoscare/mandala-art-lora",
         parameters: {
           guidance_scale: 7.5,
-          num_inference_steps: 15, // Reduced steps for faster generation
+          num_inference_steps: 12, // Reduced steps for faster generation
         }
       }, { signal: controller.signal })
 
@@ -101,22 +95,22 @@ serve(async (req) => {
 
       return new Response(
         JSON.stringify({ output: [imageUrl] }),
-        { headers: corsHeaders }
+        { headers: { ...corsHeaders } }
       )
 
     } catch (apiError) {
       clearTimeout(timeout)
       console.error("API error:", apiError)
-      throw new Error(apiError.name === 'AbortError' 
-        ? 'Generation timed out. Please try again.'
-        : `API error: ${apiError.message}`)
+      throw apiError.name === 'AbortError' 
+        ? new Error('Generation timed out. Please try again.')
+        : new Error(`API error: ${apiError.message}`)
     }
 
   } catch (error) {
     console.error('Error:', error)
     
     // If there's a jobId, update the job with the error
-    if (reqBody?.jobId) {
+    if (jobId) {
       try {
         const supabaseUrl = Deno.env.get('SUPABASE_URL')
         const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
@@ -130,7 +124,7 @@ serve(async (req) => {
               error: error.message,
               completed_at: new Date().toISOString()
             })
-            .eq('id', reqBody.jobId)
+            .eq('id', jobId)
         }
       } catch (dbError) {
         console.error('Failed to update job status:', dbError)
@@ -144,7 +138,7 @@ serve(async (req) => {
       }),
       { 
         status: 500,
-        headers: corsHeaders
+        headers: { ...corsHeaders }
       }
     )
   }
