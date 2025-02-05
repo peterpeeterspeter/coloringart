@@ -1,7 +1,5 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { HfInference } from 'https://esm.sh/@huggingface/inference@2.3.2'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,7 +13,10 @@ serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
-      headers: corsHeaders
+      headers: {
+        ...corsHeaders,
+        'Access-Control-Max-Age': '86400',
+      }
     })
   }
 
@@ -48,16 +49,16 @@ serve(async (req) => {
     const timeout = setTimeout(() => {
       controller.abort()
       console.log("Generation timed out")
-    }, 12000) // 12 second timeout
+    }, 10000) // 10 second timeout
 
     try {
       console.log("Starting image generation")
       const response = await hf.textToImage({
         inputs: mandalaPrompt,
-        model: "rexoscare/mandala-art-lora",
+        model: "stabilityai/stable-diffusion-xl-base-1.0", // Using a faster model
         parameters: {
           guidance_scale: 7.5,
-          num_inference_steps: 12, // Reduced steps for faster generation
+          num_inference_steps: 10, // Reduced steps for faster generation
         }
       }, { signal: controller.signal })
 
@@ -73,29 +74,14 @@ serve(async (req) => {
       const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)))
       const imageUrl = `data:image/png;base64,${base64}`
 
-      if (jobId) {
-        console.log("Updating job status")
-        const supabaseUrl = Deno.env.get('SUPABASE_URL')
-        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-        
-        if (!supabaseUrl || !supabaseKey) {
-          throw new Error("Missing Supabase credentials")
-        }
-
-        const supabase = createClient(supabaseUrl, supabaseKey)
-        await supabase
-          .from('mandala_jobs')
-          .update({ 
-            status: 'completed',
-            image_url: imageUrl,
-            completed_at: new Date().toISOString()
-          })
-          .eq('id', jobId)
-      }
-
       return new Response(
         JSON.stringify({ output: [imageUrl] }),
-        { headers: { ...corsHeaders } }
+        { 
+          headers: { 
+            ...corsHeaders,
+            'Cache-Control': 'no-cache',
+          }
+        }
       )
 
     } catch (apiError) {
@@ -109,28 +95,6 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error:', error)
     
-    // If there's a jobId, update the job with the error
-    if (jobId) {
-      try {
-        const supabaseUrl = Deno.env.get('SUPABASE_URL')
-        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-        
-        if (supabaseUrl && supabaseKey) {
-          const supabase = createClient(supabaseUrl, supabaseKey)
-          await supabase
-            .from('mandala_jobs')
-            .update({ 
-              status: 'error',
-              error: error.message,
-              completed_at: new Date().toISOString()
-            })
-            .eq('id', jobId)
-        }
-      } catch (dbError) {
-        console.error('Failed to update job status:', dbError)
-      }
-    }
-
     return new Response(
       JSON.stringify({ 
         error: 'Failed to generate mandala',
