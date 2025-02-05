@@ -52,7 +52,9 @@ serve(async (req) => {
       model: "gokaygokay/Flux-Mandala-LoRA",
       parameters: {
         guidance_scale: 7.5,
-        num_inference_steps: 20
+        num_inference_steps: 20,
+        width: 768,
+        height: 768
       }
     })
 
@@ -73,10 +75,8 @@ serve(async (req) => {
         output: [imageUrl] 
       }),
       { 
-        headers: { 
-          ...corsHeaders,
-          'Cache-Control': 'no-store'
-        }
+        headers: corsHeaders,
+        status: 200
       }
     )
 
