@@ -48,13 +48,6 @@ serve(async (req) => {
     
     console.log("Using prompt:", mandalaPrompt)
 
-    // Create an AbortController with timeout
-    const controller = new AbortController()
-    const timeout = setTimeout(() => {
-      controller.abort()
-      console.log("Generation timed out")
-    }, 15000) // 15 second timeout for better quality
-
     try {
       console.log("Starting image generation")
       const response = await hf.textToImage({
@@ -67,38 +60,35 @@ serve(async (req) => {
           height: 768,
           negative_prompt: "color, colored, realistic, photographic, 3d, shading"
         }
-      }, { signal: controller.signal })
+      })
 
-      clearTimeout(timeout)
       console.log("Image generation completed")
 
       if (!response) {
         throw new Error("No response from Hugging Face API")
       }
 
-      // Convert blob to base64 in chunks to prevent stack overflow
+      // Convert blob to base64
       const buffer = await response.arrayBuffer()
-      const bytes = new Uint8Array(buffer)
-      const binary = Array.from(bytes).map(byte => String.fromCharCode(byte)).join('')
-      const base64 = btoa(binary)
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)))
       const imageUrl = `data:image/png;base64,${base64}`
 
       return new Response(
-        JSON.stringify({ output: [imageUrl] }),
+        JSON.stringify({ 
+          success: true,
+          output: [imageUrl] 
+        }),
         { 
           headers: { 
             ...corsHeaders,
-            'Cache-Control': 'no-cache',
+            'Cache-Control': 'no-store'
           }
         }
       )
 
     } catch (apiError) {
-      clearTimeout(timeout)
       console.error("API error:", apiError)
-      throw apiError.name === 'AbortError' 
-        ? new Error('Generation timed out. Please try again.')
-        : new Error(`API error: ${apiError.message}`)
+      throw new Error(`API error: ${apiError.message}`)
     }
 
   } catch (error) {
@@ -106,6 +96,7 @@ serve(async (req) => {
     
     return new Response(
       JSON.stringify({ 
+        success: false,
         error: 'Failed to generate mandala',
         details: error.message 
       }),
