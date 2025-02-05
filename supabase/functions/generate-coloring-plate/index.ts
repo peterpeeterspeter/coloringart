@@ -64,8 +64,7 @@ serve(async (req) => {
         model: "renderartist/coloringbookflux",
         parameters: {
           num_inference_steps: 30,
-          guidance_scale: 7.5,
-          sampler: "deis"  // As recommended in the model documentation
+          guidance_scale: 7.5
         }
       }, {
         signal: controller.signal,
