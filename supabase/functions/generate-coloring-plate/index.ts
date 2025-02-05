@@ -45,7 +45,7 @@ serve(async (req) => {
         console.log("Generation timed out after 45 seconds")
       }, 45000) // 45 second timeout
 
-      // Generate the image with timeout using the model
+      // Generate the image with timeout
       const response = await hf.textToImage({
         inputs: settings.prompt,
         model: "renderartist/coloringbookflux",
@@ -84,9 +84,7 @@ serve(async (req) => {
       )
     } catch (apiError) {
       console.error("Hugging Face API error:", apiError)
-      throw new Error(apiError.name === 'AbortError' 
-        ? 'Generation timed out after 45 seconds. Please try again.'
-        : `Hugging Face API error: ${apiError.message}`)
+      throw new Error(`Hugging Face API error: ${apiError.message}`)
     }
 
   } catch (error) {
