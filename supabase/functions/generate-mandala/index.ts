@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { HfInference } from 'https://esm.sh/@huggingface/inference@2.3.2'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
@@ -30,7 +31,7 @@ serve(async (req) => {
     const hf = new HfInference(hfToken)
 
     // Construct mandala prompt based on settings
-    let mandalaPrompt = "Create a beautiful mandala design"
+    let mandalaPrompt = "Create a beautiful mandala design with clear, well-defined lines"
     
     if (settings.emotions?.length > 0) {
       mandalaPrompt += ` expressing ${settings.emotions.join(", ")}`
@@ -55,12 +56,12 @@ serve(async (req) => {
 
     console.log("Using prompt:", mandalaPrompt)
 
-    // Create an AbortController for timeout
+    // Create an AbortController with a shorter timeout
     const controller = new AbortController()
     const timeout = setTimeout(() => {
       controller.abort()
-      console.log("Generation timed out after 45 seconds")
-    }, 45000) // 45 second timeout
+      console.log("Generation timed out after 30 seconds")
+    }, 30000) // 30 second timeout
 
     try {
       // Generate the image with timeout
@@ -69,7 +70,7 @@ serve(async (req) => {
         model: "rexoscare/mandala-art-lora",
         parameters: {
           guidance_scale: 7.5,
-          num_inference_steps: 50,
+          num_inference_steps: 30, // Reduced steps for faster generation
         }
       }, { signal: controller.signal })
 
@@ -119,7 +120,7 @@ serve(async (req) => {
     } catch (apiError) {
       console.error("Hugging Face API error:", apiError)
       const errorMessage = apiError.name === 'AbortError' 
-        ? 'Generation timed out after 45 seconds. Please try again.'
+        ? 'Generation timed out after 30 seconds. Please try again.'
         : `Hugging Face API error: ${apiError.message}`
       throw new Error(errorMessage)
     }
