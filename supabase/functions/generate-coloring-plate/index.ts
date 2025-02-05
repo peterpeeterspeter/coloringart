@@ -12,9 +12,7 @@ serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, {
-      headers: {
-        ...corsHeaders,
-      },
+      headers: corsHeaders,
     })
   }
 
@@ -23,7 +21,16 @@ serve(async (req) => {
     console.log("Received request with settings:", settings)
 
     if (!settings?.prompt) {
-      throw new Error("No prompt provided in settings")
+      return new Response(
+        JSON.stringify({ error: "No prompt provided in settings" }),
+        { 
+          status: 400,
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+          }
+        }
+      )
     }
 
     // Check if HUGGING_FACE_ACCESS_TOKEN is set
@@ -31,7 +38,7 @@ serve(async (req) => {
     if (!hfToken) {
       console.error("HUGGING_FACE_ACCESS_TOKEN is not set")
       return new Response(
-        JSON.stringify({ error: "Missing Hugging Face API token" }),
+        JSON.stringify({ error: "Server configuration error" }),
         { 
           status: 500,
           headers: {
@@ -53,13 +60,22 @@ serve(async (req) => {
         model: "renderartist/coloringbookflux",
         parameters: {
           negative_prompt: "shadows, gradient, color, photorealistic, watermark, text, signature",
-          guidance_scale: 6.0,  // Reduced from 7.0
-          num_inference_steps: 20,  // Reduced from 30
+          guidance_scale: 6.0,
+          num_inference_steps: 20,
         }
       })
 
       if (!response) {
-        throw new Error("No response from Hugging Face API")
+        return new Response(
+          JSON.stringify({ error: "No response from image generation service" }),
+          { 
+            headers: {
+              ...corsHeaders,
+              'Content-Type': 'application/json',
+            },
+            status: 500
+          }
+        )
       }
 
       // Convert blob to base64
@@ -82,7 +98,7 @@ serve(async (req) => {
       console.error("Hugging Face API error:", apiError)
       return new Response(
         JSON.stringify({ 
-          error: "Hugging Face API error", 
+          error: "Image generation service error", 
           details: apiError.message 
         }),
         { 
@@ -99,7 +115,7 @@ serve(async (req) => {
     console.error('Error in generate-coloring-plate:', error)
     return new Response(
       JSON.stringify({ 
-        error: 'Failed to generate coloring plate', 
+        error: 'Failed to process request', 
         details: error.message 
       }),
       { 
