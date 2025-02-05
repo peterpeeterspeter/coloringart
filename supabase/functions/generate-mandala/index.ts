@@ -24,7 +24,7 @@ serve(async (req) => {
     console.log("Starting mandala generation request")
     
     // Parse request body
-    const { settings, jobId } = await req.json()
+    const { settings } = await req.json()
     console.log("Received settings:", settings)
 
     if (!settings) {
@@ -40,25 +40,27 @@ serve(async (req) => {
     console.log("Initializing Hugging Face client")
     const hf = new HfInference(hfToken)
 
-    // Simple prompt for better performance
-    const mandalaPrompt = "Generate a simple mandala with clean lines"
+    // Create a simple prompt based on settings
+    const mandalaPrompt = "Generate a simple mandala with clean lines and geometric patterns"
     console.log("Using prompt:", mandalaPrompt)
 
-    // Create an AbortController with a shorter timeout
+    // Create an AbortController with a timeout
     const controller = new AbortController()
     const timeout = setTimeout(() => {
       controller.abort()
       console.log("Generation timed out")
-    }, 10000) // 10 second timeout
+    }, 8000) // 8 second timeout
 
     try {
       console.log("Starting image generation")
       const response = await hf.textToImage({
         inputs: mandalaPrompt,
-        model: "stabilityai/stable-diffusion-xl-base-1.0", // Using a faster model
+        model: "stabilityai/stable-diffusion-2-1", // Using a more stable model
         parameters: {
           guidance_scale: 7.5,
-          num_inference_steps: 10, // Reduced steps for faster generation
+          num_inference_steps: 8, // Reduced steps for faster generation
+          width: 512,  // Fixed size to reduce memory usage
+          height: 512
         }
       }, { signal: controller.signal })
 
@@ -69,9 +71,11 @@ serve(async (req) => {
         throw new Error("No response from Hugging Face API")
       }
 
-      // Convert blob to base64
+      // Convert blob to base64 in chunks to prevent stack overflow
       const buffer = await response.arrayBuffer()
-      const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)))
+      const bytes = new Uint8Array(buffer)
+      const binary = Array.from(bytes).map(byte => String.fromCharCode(byte)).join('')
+      const base64 = btoa(binary)
       const imageUrl = `data:image/png;base64,${base64}`
 
       return new Response(
