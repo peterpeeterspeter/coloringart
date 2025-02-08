@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { HfInference } from 'https://esm.sh/@huggingface/inference@2.3.2'
 
@@ -16,8 +17,9 @@ serve(async (req) => {
     console.log("Starting mandala generation request")
     
     // Parse request body
-    const { settings, jobId } = await req.json()
-    console.log("Received settings:", settings, "jobId:", jobId)
+    const body = await req.json()
+    console.log("Received request body:", body)
+    const { settings, jobId } = body
 
     if (!settings) {
       throw new Error("No settings provided")
@@ -63,6 +65,8 @@ serve(async (req) => {
     const buffer = await response.arrayBuffer()
     const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)))
     const imageUrl = `data:image/png;base64,${base64}`
+
+    console.log("Successfully converted image to base64")
 
     return new Response(
       JSON.stringify({ 
