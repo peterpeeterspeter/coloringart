@@ -30,7 +30,7 @@ serve(async (req) => {
     if (!hfToken) {
       throw new Error("Missing Hugging Face API token")
     }
-    
+
     console.log("Initializing Hugging Face client")
     const hf = new HfInference(hfToken)
 
@@ -63,7 +63,11 @@ serve(async (req) => {
 
     // Convert blob to base64
     const buffer = await response.arrayBuffer()
-    const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)))
+    console.log("Buffer received, converting to base64")
+    
+    const bytes = new Uint8Array(buffer)
+    const binary = Array.from(bytes).map(byte => String.fromCharCode(byte)).join('')
+    const base64 = btoa(binary)
     const imageUrl = `data:image/png;base64,${base64}`
 
     console.log("Successfully converted image to base64")
